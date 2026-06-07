@@ -21,7 +21,10 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            overflow: hidden;
+            /* FIXED: Replaced overflow: hidden to enable smooth vertical scrolling */
+            overflow-x: hidden;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         .header {
@@ -413,6 +416,7 @@
         function setupTouchListeners() {
             const container = document.querySelector('.canvas-container');
 
+            // FIXED: Set passive to false so we can explicitly cancel page-wobble during internal dragging
             container.addEventListener('touchstart', (e) => {
                 if (!slots[currentSlot].img) return;
                 isDragging = true;
@@ -420,10 +424,14 @@
                 const touch = e.touches[0];
                 startX = (touch.clientX - rect.left) * (canvas.width / rect.width);
                 startY = (touch.clientY - rect.top) * (canvas.height / rect.height);
-            }, { passive: true });
+            }, { passive: false });
 
+            // FIXED: Prevents default scroll ONLY when actively adjusting an uploaded image layout
             container.addEventListener('touchmove', (e) => {
                 if (!isDragging || !slots[currentSlot].img) return;
+                
+                if (e.cancelable) e.preventDefault();
+
                 const rect = canvas.getBoundingClientRect();
                 const touch = e.touches[0];
                 const currentX = (touch.clientX - rect.left) * (canvas.width / rect.width);
@@ -439,7 +447,7 @@
                 startY = currentY;
 
                 drawEverything();
-            }, { passive: true });
+            }, { passive: false });
 
             container.addEventListener('touchend', () => {
                 isDragging = false;
@@ -447,14 +455,34 @@
         }
 
         function saveComposition() {
-            const dataUrl = canvas.toDataURL('image/png');
-            const link = document.createElement('a');
-            link.download = 'war_of_hearts_composition.png';
-            link.href = dataUrl;
-            link.click();
+            try {
+                const dataUrl = canvas.toDataURL('image/png');
 
-            if (window.AndroidInterface && window.AndroidInterface.saveImage) {
-                window.AndroidInterface.saveImage(dataUrl);
+                // 1. Android Native interface handler fallback
+                if (window.AndroidInterface && window.AndroidInterface.saveImage) {
+                    window.AndroidInterface.saveImage(dataUrl);
+                    return;
+                }
+
+                // 2. FIXED: Temporary DOM injection for cross-browser standard download initialization
+                const link = document.createElement('a');
+                link.download = 'war_of_hearts_composition.png';
+                link.href = dataUrl;
+
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+            } catch (error) {
+                console.error("Save failed:", error);
+                // 3. Fallback: If downloads are completely restricted, display image in an isolated tab
+                const newWindow = window.open();
+                if (newWindow) {
+                    newWindow.document.write(`<img src="${canvas.toDataURL('image/png')}" style="max-width:100%; height:auto;" />`);
+                    newWindow.document.title = "Save your composition";
+                } else {
+                    alert("Download blocked. Please try saving by long-pressing the preview canvas.");
+                }
             }
         }
 
