@@ -19,10 +19,12 @@
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
             color: white;
-            height: 100vh;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
+            overflow-x: hidden;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         /* App Bar */
@@ -46,14 +48,17 @@
             justify-content: center;
             padding: 20px;
             position: relative;
+            min-height: 320px;
         }
 
         canvas {
             max-width: 100%;
-            max-height: 100%;
+            height: auto;
+            max-height: 50vh; 
             border-radius: 12px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
             background-color: #111;
+            display: block;
         }
 
         /* Mobile Controls */
@@ -186,6 +191,7 @@
 
         // Load Image
         document.getElementById('fileInput').onchange = (e) => {
+            if (!e.target.files || !e.target.files[0]) return;
             const reader = new FileReader();
             reader.onload = (f) => {
                 const img = new Image();
@@ -211,25 +217,33 @@
         function applyEffect() {
             if (!originalImg) return;
 
-            // Maintain aspect ratio (max 1200px for mobile performance)
             const maxDim = 1200;
             let w = originalImg.width;
             let h = originalImg.height;
             const scale = Math.min(maxDim / w, maxDim / h, 1);
-            w *= scale; h *= scale;
+            
+            // CRITICAL FIX: Ensure width and height are integers to prevent image array mapping crashes
+            w = Math.floor(w * scale); 
+            h = Math.floor(h * scale);
 
             canvas.width = w;
             canvas.height = h;
 
-            // 1. Draw Original Image with slight vintage tint
-            ctx.filter = 'contrast(1.1) brightness(1.05) saturate(1.1)';
+            // 1. Draw Base Original Image
             ctx.drawImage(originalImg, 0, 0, w, h);
-            ctx.filter = 'none';
+            
+            // 2. CRITICAL FIX: Replaced experimental context filters with stable blend layers
+            ctx.save();
+            ctx.globalCompositeOperation = 'multiply';
+            ctx.fillStyle = 'rgba(255, 235, 205, 0.08)'; // Smooth cinematic vintage warmth overlay
+            ctx.fillRect(0, 0, w, h);
+            ctx.restore();
 
             const strength = document.getElementById('strength').value / 100;
             const grain = document.getElementById('grain').value / 100;
 
-            // 2. Add Vertical Light Leaks (Screen Mode)
+            // 3. Add Vertical Light Leaks (Screen Mode)
+            ctx.save();
             ctx.globalCompositeOperation = 'screen';
             
             // Primary Orange Leak (Left-Mid)
@@ -240,67 +254,90 @@
 
             // Greenish/Yellow Leak (Right Side)
             drawLeak(w * 0.7, 0, w * 0.2, h, ['rgba(100,255,100,0.4)', 'rgba(255,255,0,0)'], strength * 0.7);
+            ctx.restore();
 
-            // 3. Add Film Dust & Grain
-            ctx.globalCompositeOperation = 'overlay';
+            // 4. Add Film Dust & Grain
             if (grain > 0) {
                 addGrain(w, h, grain);
             }
-
-            ctx.globalCompositeOperation = 'source-over';
         }
 
         function drawLeak(x, y, width, height, colors, alpha) {
+            ctx.save();
             ctx.globalAlpha = alpha;
             const grad = ctx.createLinearGradient(x, y, x + width, y);
             grad.addColorStop(0, colors[0]);
             grad.addColorStop(1, colors[1]);
             
             ctx.fillStyle = grad;
-            // Use a slightly tilted rectangle for organic feel
             ctx.beginPath();
             ctx.moveTo(x - 50, 0);
             ctx.lineTo(x + width, 0);
             ctx.lineTo(x + width - 100, height);
             ctx.lineTo(x - 150, height);
             ctx.fill();
-            ctx.globalAlpha = 1.0;
+            ctx.restore();
         }
 
         function addGrain(w, h, amount) {
-            // Tiny White Dust/Specks
-            ctx.fillStyle = "rgba(255,255,255,0.4)";
-            for (let i = 0; i < (w * h * 0.0001) * amount * 10; i++) {
-                const x = Math.random() * w;
-                const y = Math.random() * h;
-                const size = Math.random() * 2;
-                ctx.fillRect(x, y, size, size);
-            }
-            
-            // Fine Film Grain
+            // FIX: Generate the micro film-grain data matrix first
             const imgData = ctx.getImageData(0, 0, w, h);
             const pixels = imgData.data;
             for (let i = 0; i < pixels.length; i += 4) {
-                const noise = (Math.random() - 0.5) * (amount * 50);
+                const noise = (Math.random() - 0.5) * (amount * 45);
                 pixels[i] += noise;
                 pixels[i+1] += noise;
                 pixels[i+2] += noise;
             }
             ctx.putImageData(imgData, 0, 0);
+
+            // FIX: Render organic light dust specks over compiled noise using standard compositing
+            ctx.save();
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.fillStyle = "rgba(255,255,255,0.45)";
+            const particles = Math.floor((w * h * 0.0001) * amount * 8);
+            for (let i = 0; i < particles; i++) {
+                const x = Math.random() * w;
+                const y = Math.random() * h;
+                const size = Math.random() * 1.5 + 0.5;
+                ctx.fillRect(x, y, size, size);
+            }
+            ctx.restore();
         }
 
         function saveImage() {
             if (!originalImg) return;
-            const link = document.createElement('a');
-            link.download = 'light_leak_effect.png';
-            link.href = canvas.toDataURL('image/png');
-            link.click();
+            try {
+                const dataUrl = canvas.toDataURL('image/png');
+
+                if (window.AndroidInterface && window.AndroidInterface.saveImage) {
+                    window.AndroidInterface.saveImage(dataUrl);
+                    return;
+                }
+
+                const link = document.createElement('a');
+                link.download = 'light_leak_effect.png';
+                link.href = dataUrl;
+
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } catch (error) {
+                console.error("Save system error:", error);
+                const newWindow = window.open();
+                if (newWindow) {
+                    newWindow.document.write(`<img src="${canvas.toDataURL('image/png')}" style="max-width:100%; height:auto;" />`);
+                    newWindow.document.title = "Save your photo";
+                } else {
+                    alert("Download restricted. Long-press the preview canvas element directly to save.");
+                }
+            }
         }
 
         window.onload = () => {
             canvas.width = 400; canvas.height = 300;
             ctx.fillStyle = "#111"; ctx.fillRect(0,0,400,300);
-            ctx.fillStyle = "#444"; ctx.textAlign = "center";
+            ctx.fillStyle = "#444"; ctx.font = "14px 'Segoe UI', sans-serif"; ctx.textAlign = "center";
             ctx.fillText("TAP 'OPEN PHOTO' TO START", 200, 150);
         };
     </script>
