@@ -19,10 +19,12 @@
             font-family: 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(180deg, #0f0f1b 0%, #1a1a2e 100%);
             color: var(--text);
-            height: 100vh;
+            min-height: 100vh; /* FIX: Allows container to naturally expand vertically */
             display: flex;
             flex-direction: column;
-            overflow: hidden;
+            overflow-x: hidden;
+            overflow-y: auto; /* FIX: Activates vertical scroll when content overflows */
+            -webkit-overflow-scrolling: touch; /* FIX: Smooth kinetic momentum scrolling on iOS devices */
         }
 
         /* Header */
@@ -45,6 +47,7 @@
             justify-content: center;
             padding: 20px;
             position: relative;
+            min-height: 320px; /* Prevents visual layout collapsing */
             background-image: 
                 linear-gradient(45deg, #161625 25%, transparent 25%), 
                 linear-gradient(-45deg, #161625 25%, transparent 25%), 
@@ -55,16 +58,18 @@
 
         canvas {
             max-width: 100%;
-            max-height: 100%;
+            height: auto;
+            max-height: 50vh; /* FIX: Limits maximum visual size so adjustments remain reachable */
             box-shadow: 0 10px 40px rgba(0,0,0,0.5);
             background-color: white;
             border-radius: 4px;
+            display: block;
         }
 
         /* Controls Area */
         .controls-panel {
             background: var(--card);
-            padding: 20px;
+            padding: 25px 20px 40px 20px; /* Extra bottom cushion for virtual home indicator swipes */
             border-top-left-radius: 30px;
             border-top-right-radius: 30px;
             box-shadow: 0 -10px 30px rgba(0,0,0,0.4);
@@ -94,32 +99,37 @@
 
         input[type=range]::-webkit-slider-thumb {
             -webkit-appearance: none;
-            width: 20px;
-            height: 20px;
+            width: 22px;
+            height: 22px;
             background: var(--primary);
             border-radius: 50%;
             cursor: pointer;
+            box-shadow: 0 0 8px rgba(0, 210, 255, 0.4);
         }
 
         .color-presets {
             display: flex;
-            gap: 10px;
+            gap: 12px;
             margin-top: 5px;
             overflow-x: auto;
-            padding-bottom: 5px;
+            padding-bottom: 8px;
+            -webkit-overflow-scrolling: touch;
         }
 
         .color-dot {
-            width: 35px;
-            height: 35px;
+            width: 38px;
+            height: 38px;
             border-radius: 50%;
             border: 2px solid rgba(255,255,255,0.2);
             flex-shrink: 0;
+            cursor: pointer;
+            transition: 0.2s;
         }
 
         .color-dot.active {
             border-color: white;
-            transform: scale(1.1);
+            transform: scale(1.15);
+            box-shadow: 0 0 10px rgba(255,255,255,0.3);
         }
 
         .action-btns {
@@ -130,7 +140,7 @@
 
         button {
             flex: 1;
-            padding: 14px;
+            padding: 15px;
             border: none;
             border-radius: 15px;
             font-weight: bold;
@@ -140,9 +150,10 @@
             justify-content: center;
             gap: 8px;
             transition: 0.2s;
+            cursor: pointer;
         }
 
-        .btn-load { background: #444; color: white; }
+        .btn-load { background: #444; color: white; border: 1px solid rgba(255,255,255,0.05); }
         .btn-save { background: linear-gradient(90deg, var(--primary), var(--secondary)); color: white; }
         button:active { transform: scale(0.96); }
 
@@ -203,18 +214,19 @@
 
         // Initialize
         window.onload = () => {
-            canvas.width = 800;
-            canvas.height = 800;
+            canvas.width = 400;
+            canvas.height = 400;
             ctx.fillStyle = "white";
-            ctx.fillRect(0,0,800,800);
-            ctx.fillStyle = "#ccc";
-            ctx.font = "20px sans-serif";
+            ctx.fillRect(0,0,400,400);
+            ctx.fillStyle = "#aaa";
+            ctx.font = "14px sans-serif";
             ctx.textAlign = "center";
-            ctx.fillText("Upload a photo to start", 400, 400);
+            ctx.fillText("TAP 'OPEN PHOTO' TO START", 200, 200);
         };
 
         // Handle Image Upload
         document.getElementById('fileInput').onchange = function(e) {
+            if (!e.target.files || !e.target.files[0]) return;
             const reader = new FileReader();
             reader.onload = function(event) {
                 const img = new Image();
@@ -246,19 +258,31 @@
         function processImage() {
             if (!originalImg) return;
 
-            // 1. Setup Canvas Size
-            const size = Math.min(originalImg.width, originalImg.height);
-            canvas.width = originalImg.width;
-            canvas.height = originalImg.height;
+            // 1. Setup Canvas Size with Safe Performance Downscaling for Mobile Engines
+            const maxDim = 1200;
+            let w = originalImg.width;
+            let h = originalImg.height;
+            
+            if (w > maxDim || h > maxDim) {
+                const ratio = Math.min(maxDim / w, maxDim / h);
+                w = Math.floor(w * ratio);
+                h = Math.floor(h * ratio);
+            } else {
+                w = Math.floor(w);
+                h = Math.floor(h);
+            }
 
-            // 2. Draw Background
+            canvas.width = w;
+            canvas.height = h;
+
+            // 2. Draw Background Layer
             ctx.fillStyle = "white";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillRect(0, 0, w, h);
 
             if (selectedBgColor !== 'none') {
-                const centerX = canvas.width / 2;
-                const centerY = canvas.height / 2;
-                const radius = Math.min(canvas.width, canvas.height) * 0.45;
+                const centerX = w / 2;
+                const centerY = h / 2;
+                const radius = Math.min(w, h) * 0.45;
                 
                 ctx.beginPath();
                 ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
@@ -267,46 +291,60 @@
             }
 
             // 3. Process Stencil Effect
-            // We create an offscreen buffer for the black/white calculation
             const offCanvas = document.createElement('canvas');
-            offCanvas.width = canvas.width;
-            offCanvas.height = canvas.height;
+            offCanvas.width = w;
+            offCanvas.height = h;
             const offCtx = offCanvas.getContext('2d');
-            offCtx.drawImage(originalImg, 0, 0);
+            offCtx.drawImage(originalImg, 0, 0, w, h);
 
-            const imgData = offCtx.getImageData(0, 0, offCanvas.width, offCanvas.height);
+            const imgData = offCtx.getImageData(0, 0, w, h);
             const data = imgData.data;
             const threshold = parseInt(thresholdInput.value);
 
             for (let i = 0; i < data.length; i += 4) {
-                // Grayscale calculation
-                const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                // Grayscale luminance calculation
+                const avg = (data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114);
                 
                 if (avg < threshold) {
-                    // Make it Black
+                    // Make it Pure Solid Black
                     data[i] = 0;
                     data[i+1] = 0;
                     data[i+2] = 0;
                     data[i+3] = 255;
                 } else {
-                    // Make it Transparent (so background color shows through)
+                    // Make it Fully Transparent (reveals background circle/white layers)
                     data[i+3] = 0;
                 }
             }
             
-            // Put processed pixels back
+            // Put processed stencil pixels back onto offscreen buffer
             offCtx.putImageData(imgData, 0, 0);
             
-            // Draw the stencil on top of our main canvas
+            // Render stencil structure securely directly on top of the main display context
             ctx.drawImage(offCanvas, 0, 0);
         }
 
         function downloadImage() {
             if (!originalImg) return;
-            const link = document.createElement('a');
-            link.download = 'stencil_art.png';
-            link.href = canvas.toDataURL('image/png');
-            link.click();
+            try {
+                const dataUrl = canvas.toDataURL('image/png');
+                
+                // Hybrid application bridge handling wrapper
+                if (window.AndroidInterface && window.AndroidInterface.saveImage) {
+                    window.AndroidInterface.saveImage(dataUrl);
+                    return;
+                }
+
+                const link = document.createElement('a');
+                link.download = 'stencil_art.png';
+                link.href = dataUrl;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } catch (e) {
+                console.error("Save system fallback triggered:", e);
+                alert("To download on this interface, perform a long-press step directly on the preview art image canvas block to manually extract it.");
+            }
         }
     </script>
 </body>
