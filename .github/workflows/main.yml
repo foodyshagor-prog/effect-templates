@@ -3,7 +3,7 @@ on:
   push:
     paths:
       - '**.html'
-  workflow_dispatch:  # <--- এই লাইনটি যোগ করলেই বাটনটি আসবে!
+  workflow_dispatch:
 
 jobs:
   generate:
@@ -15,13 +15,13 @@ jobs:
       - name: Generate JSON
         run: |
           echo '{"effects": [' > all-effects.json
-          # প্রতিটি HTML ফাইলের নাম থেকে JSON এন্ট্রি তৈরি হবে
-          find . -maxdepth 1 -name "*.html" -printf '{"id": "%f", "title": "%f", "url": "https://foodyshagor-prog.github.io/effect-templates/%f"},' | sed 's/,$//' >> all-effects.json
+          # প্রতিটি HTML ফাইলের জন্য নাম, টাইটেল, URL এবং ইমেজ URL তৈরি হচ্ছে
+          find . -maxdepth 1 -name "*.html" -printf '{"id": "%f", "title": "%f", "url": "https://foodyshagor-prog.github.io/effect-templates/%f", "image_url": "https://foodyshagor-prog.github.io/effect-templates/images/%f.jpg"},' | sed 's/\.html//g' | sed 's/,$//' >> all-effects.json
           echo ']}' >> all-effects.json
       - name: Commit and Push
         run: |
           git config --global user.name 'github-actions'
           git config --global user.email 'github-actions@github.com'
           git add all-effects.json
-          git commit -m "Auto-update JSON from GitHub Actions" || echo "No changes to commit"
+          git commit -m "Auto-update JSON with images" || echo "No changes to commit"
           git push
