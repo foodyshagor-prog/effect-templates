@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Halftone Torn Effect</title>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:sans-serif;
+-webkit-tap-highlight-color:transparent;
+}
+
+body{
+background:linear-gradient(180deg,#0d1018,#1c2233);
+color:white;
+padding:15px;
+min-height:100vh;
+}
+
+.wrapper{
+max-width:500px;
+margin:auto;
+}
+
+.title{
+text-align:center;
+font-size:22px;
+font-weight:700;
+margin-bottom:15px;
+}
+
+.card{
+background:#161b28;
+border-radius:24px;
+padding:15px;
+box-shadow:0 10px 35px rgba(0,0,0,.4);
+}
+
+.preview{
+width:100%;
+aspect-ratio:1/1;
+border-radius:18px;
+overflow:hidden;
+background:#0c0f16;
+}
+
+canvas{
+width:100%;
+height:100%;
+display:block;
+}
+
+.controls{
+margin-top:15px;
+display:flex;
+flex-direction:column;
+gap:12px;
+}
+
+.control{
+background:#111523;
+padding:12px;
+border-radius:14px;
+}
+
+label{
+display:block;
+font-size:13px;
+margin-bottom:6px;
+}
+
+input[type=range]{
+width:100%;
+}
+
+.upload,
+.save{
+height:52px;
+border:none;
+border-radius:15px;
+font-weight:600;
+font-size:15px;
+}
+
+.upload{
+background:#2d7fff;
+color:white;
+display:flex;
+align-items:center;
+justify-content:center;
+cursor:pointer;
+}
+
+.save{
+background:linear-gradient(90deg,#7a5cff,#a94cff);
+color:white;
+cursor:pointer;
+}
+
+input[type=file]{
+display:none;
+}
+
+</style>
+</head>
+<body>
+
+<div class="wrapper">
+
+<div class="title">
+Halftone Torn Effect
+</div>
+
+<div class="card">
+
+<div class="preview">
+<canvas id="canvas"></canvas>
+</div>
+
+<div class="controls">
+
+<label class="upload">
+Upload Photo
+<input type="file" id="upload" accept="image/*">
+</label>
+
+<div class="control">
+<label>Tear Position</label>
+<input id="tear" type="range" min="20" max="80" value="50">
+</div>
+
+<div class="control">
+<label>Halftone Size</label>
+<input id="dots" type="range" min="4" max="18" value="8">
+</div>
+
+<div class="control">
+<label>Contrast</label>
+<input id="contrast" type="range" min="50" max="250" value="140">
+</div>
+
+<button id="saveBtn" class="save">
+Save Image
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+const canvas=document.getElementById("canvas");
+const ctx=canvas.getContext("2d");
+
+const upload=document.getElementById("upload");
+const tear=document.getElementById("tear");
+const dots=document.getElementById("dots");
+const contrast=document.getElementById("contrast");
+
+let img=null;
+
+function resizeCanvas(){
+
+const size=canvas.parentElement.offsetWidth;
+
+canvas.width=size;
+canvas.height=size;
+
+render();
+
+}
+
+window.addEventListener("resize",resizeCanvas);
+
+upload.addEventListener("change",(e)=>{
+
+const file=e.target.files[0];
+if(!file) return;
+
+const reader=new FileReader();
+
+reader.onload=(ev)=>{
+
+img=new Image();
+
+img.onload=()=>{
+
+render();
+
+};
+
+img.src=ev.target.result;
+
+};
+
+reader.readAsDataURL(file);
+
+});
+
+tear.addEventListener("input",render);
+dots.addEventListener("input",render);
+contrast.addEventListener("input",render);
+
+function drawCover(context,image,w,h){
+
+const scale=Math.max(
+w/image.width,
+h/image.height
+);
+
+const nw=image.width*scale;
+const nh=image.height*scale;
+
+const x=(w-nw)/2;
+const y=(h-nh)/2;
+
+context.drawImage(image,x,y,nw,nh);
+
+}
+
+function createHalftone(){
+
+const w=canvas.width;
+const h=canvas.height;
+
+const source=document.createElement("canvas");
+source.width=w;
+source.height=h;
+
+const sctx=source.getContext("2d");
+
+drawCover(sctx,img,w,h);
+
+const data=sctx.getImageData(0,0,w,h);
+
+const output=document.createElement("canvas");
+output.width=w;
+output.height=h;
+
+const octx=output.getContext("2d");
+
+octx.fillStyle="#d9d9d9";
+octx.fillRect(0,0,w,h);
+
+const step=parseInt(dots.value);
+const c=parseInt(contrast.value)/100;
+
+for(let y=0;y<h;y+=step){
+
+for(let x=0;x<w;x+=step){
+
+const i=(y*w+x)*4;
+
+const r=data.data[i];
+const g=data.data[i+1];
+const b=data.data[i+2];
+
+let gray=(r+g+b)/3;
+
+gray=((gray-128)*c)+128;
+
+gray=Math.max(0,Math.min(255,gray));
+
+const radius=
+((255-gray)/255)*(step*0.6);
+
+octx.beginPath();
+
+octx.fillStyle="#111";
+
+octx.arc(
+x,
+y,
+radius,
+0,
+Math.PI*2
+);
+
+octx.fill();
+
+}
+
+}
+
+return output;
+
+}
+
+function createTearPath(xPos,h){
+
+let points=[];
+
+for(let y=0;y<=h;y+=12){
+
+points.push({
+x:xPos+(Math.random()*18-9),
+y:y
+});
+
+}
+
+return points;
+
+}
+
+function render(){
+
+ctx.clearRect(
+0,
+0,
+canvas.width,
+canvas.height
+);
+
+if(!img){
+
+ctx.fillStyle="#1b2233";
+ctx.fillRect(
+0,
+0,
+canvas.width,
+canvas.height
+);
+
+ctx.fillStyle="#999";
+ctx.font="18px sans-serif";
+ctx.textAlign="center";
+
+ctx.fillText(
+"Upload Image",
+canvas.width/2,
+canvas.height/2
+);
+
+return;
+
+}
+
+const w=canvas.width;
+const h=canvas.height;
+
+const tearX=
+w*(parseInt(tear.value)/100);
+
+drawCover(
+ctx,
+img,
+w,
+h
+);
+
+const halftone=createHalftone();
+
+ctx.save();
+
+ctx.beginPath();
+ctx.rect(
+tearX,
+0,
+w-tearX,
+h
+);
+
+ctx.clip();
+
+ctx.drawImage(
+halftone,
+0,
+0
+);
+
+ctx.restore();
+
+const tearPath=
+createTearPath(
+tearX,
+h
+);
+
+ctx.save();
+
+ctx.beginPath();
+
+ctx.moveTo(
+tearPath[0].x,
+tearPath[0].y
+);
+
+tearPath.forEach(p=>{
+
+ctx.lineTo(
+p.x,
+p.y
+);
+
+});
+
+ctx.lineWidth=34;
+ctx.strokeStyle="#ffffff";
+ctx.shadowBlur=18;
+ctx.shadowColor=
+"rgba(0,0,0,.45)";
+ctx.stroke();
+
+ctx.restore();
+
+ctx.save();
+
+ctx.beginPath();
+
+ctx.moveTo(
+tearPath[0].x,
+tearPath[0].y
+);
+
+tearPath.forEach(p=>{
+
+ctx.lineTo(
+p.x,
+p.y
+);
+
+});
+
+ctx.lineWidth=3;
+ctx.strokeStyle="#f0f0f0";
+ctx.stroke();
+
+for(let i=0;i<3500;i++){
+
+const px=
+tearX+(Math.random()*30-15);
+
+const py=
+Math.random()*h;
+
+ctx.fillStyle=
+`rgba(220,220,220,${Math.random()*0.4})`;
+
+ctx.fillRect(
+px,
+py,
+1,
+1
+);
+
+}
+
+ctx.restore();
+
+ctx.fillStyle=
+"rgba(0,0,0,.6)";
+ctx.fillRect(
+20,
+h-55,
+85,
+30
+);
+
+ctx.fillStyle="#fff";
+ctx.font="bold 14px sans-serif";
+ctx.fillText(
+"BEFORE",
+62,
+h-35
+);
+
+ctx.fillStyle=
+"rgba(0,0,0,.6)";
+ctx.fillRect(
+w-105,
+h-55,
+85,
+30
+);
+
+ctx.fillStyle="#fff";
+ctx.fillText(
+"AFTER",
+w-63,
+h-35
+);
+
+}
+
+document
+.getElementById("saveBtn")
+.addEventListener("click",()=>{
+
+const link=
+document.createElement("a");
+
+link.download=
+"halftone-torn-effect.png";
+
+link.href=
+canvas.toDataURL("image/png");
+
+link.click();
+
+});
+
+resizeCanvas();
+
+</script>
+
+</body>
+</html>

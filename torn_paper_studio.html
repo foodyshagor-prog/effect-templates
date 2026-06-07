@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Hand Drawn Torn Paper Studio</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        html, body {
+            min-height: 100%;
+            min-height: 100dvh;
+            background: #0e1118;
+            color: #f1f5f9;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            overflow-y: auto;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            padding-top: env(safe-area-inset-top, 0px);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+
+        header {
+            padding: 18px 16px;
+            text-align: center;
+            background: rgba(14, 17, 24, 0.85);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+
+        header h1 {
+            font-size: 1rem;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: #f8fafc;
+        }
+
+        header span {
+            display: block;
+            font-size: 0.68rem;
+            color: #a78bfa;
+            letter-spacing: 1px;
+            margin-top: 4px;
+            font-weight: 700;
+        }
+
+        .workspace {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            min-height: 340px;
+        }
+
+        .canvas-container {
+            width: 100%;
+            max-width: 480px;
+            height: 400px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            border-radius: 24px;
+            overflow: hidden;
+            background: #05070a;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: inset 0 0 40px rgba(0,0,0,0.6);
+        }
+
+        canvas {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            border-radius: 8px;
+            display: none;
+            box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.85);
+        }
+
+        .placeholder {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #475569;
+            cursor: pointer;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .placeholder .icon-box {
+            width: 68px;
+            height: 68px;
+            background: rgba(167, 139, 250, 0.06);
+            border: 1px solid rgba(167, 139, 250, 0.2);
+            border-radius: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+
+        .placeholder svg {
+            width: 34px;
+            height: 34px;
+            fill: #a78bfa;
+        }
+
+        .placeholder p {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #94a3b8;
+        }
+
+        .controls-panel {
+            background: #131722;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 24px;
+            border-radius: 32px 32px 0 0;
+            margin-top: auto;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.3);
+        }
+
+        .slider-group {
+            margin-bottom: 18px;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: #94a3b8;
+            margin-bottom: 8px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .slider-label span.val {
+            background: rgba(167, 139, 250, 0.12);
+            color: #c084fc;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-family: monospace;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: #1e293b;
+            border-radius: 2px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #ffffff;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            cursor: pointer;
+            border: 2px solid #a78bfa;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1.3fr;
+            gap: 14px;
+            margin-top: 22px;
+        }
+
+        .btn {
+            font-family: inherit;
+            font-weight: 700;
+            font-size: 0.9rem;
+            height: 50px;
+            border: none;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-upload {
+            background: #1e293b;
+            color: #cbd5e1;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .btn-save {
+            background: #a78bfa;
+            color: #120636;
+            box-shadow: 0 4px 16px rgba(167, 139, 250, 0.25);
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        #file-input {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Torn Paper Studio</h1>
+        <span>HAND DRAWN SKETCH COMPOSITOR</span>
+    </header>
+
+    <div class="workspace">
+        <div class="canvas-container" id="drop-zone">
+            <div class="placeholder" id="placeholder">
+                <div class="icon-box">
+                    <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4.03 12.03l-2.41 3.12c-.2.26-.59.26-.79 0l-1.84-2.39a.498.498 0 0 0-.79 0L6.28 19.4c-.28.36-.02.89.43.89h10.56c.45 0 .71-.53.43-.89l-2.9-3.76a.5.5 0 0 0-.83.3c-.01-.01-.01-.02-.01-.02zM12 11c1.38 0 2.5-1.12 2.5-2.5S13.38 6 12 6 9.5 7.12 9.5 8.5 10.62 11 12 11z"/></svg>
+                </div>
+                <p>Upload artwork target photo</p>
+            </div>
+            <canvas id="editorCanvas"></canvas>
+        </div>
+    </div>
+
+    <div class="controls-panel">
+        <div class="slider-group">
+            <div class="slider-label">
+                <span>Tear Window Size</span>
+                <span class="val" id="val-size">45%</span>
+            </div>
+            <input type="range" id="slider-size" min="15" max="85" value="45" step="1">
+        </div>
+
+        <div class="slider-group">
+            <div class="slider-label">
+                <span>Edge Roughness & Grain</span>
+                <span class="val" id="val-rough">55%</span>
+            </div>
+            <input type="range" id="slider-rough" min="10" max="100" value="55" step="2">
+        </div>
+
+        <div class="slider-group">
+            <div class="slider-label">
+                <span>Sketch Line Intensity</span>
+                <span class="val" id="val-sketch">70%</span>
+            </div>
+            <input type="range" id="slider-sketch" min="20" max="100" value="70" step="2">
+        </div>
+
+        <div class="slider-group">
+            <div class="slider-label">
+                <span>Tear Position Y</span>
+                <span class="val" id="val-position">50%</span>
+            </div>
+            <input type="range" id="slider-position" min="25" max="75" value="50" step="1">
+        </div>
+
+        <div class="action-buttons">
+            <button class="btn btn-upload" id="btn-upload">New Source</button>
+            <button class="btn btn-save" id="btn-save">Export Image</button>
+        </div>
+    </div>
+
+    <input type="file" id="file-input" accept="image/*">
+
+    <script>
+        const canvas = document.getElementById('editorCanvas');
+        const ctx = canvas.getContext('2d');
+        const fileInput = document.getElementById('file-input');
+        const placeholder = document.getElementById('placeholder');
+        const dropZone = document.getElementById('drop-zone');
+        const btnUpload = document.getElementById('btn-upload');
+        const btnSave = document.getElementById('btn-save');
+
+        const sliderSize = document.getElementById('slider-size');
+        const sliderRough = document.getElementById('slider-rough');
+        const sliderSketch = document.getElementById('slider-sketch');
+        const sliderPosition = document.getElementById('slider-position');
+
+        const valSize = document.getElementById('val-size');
+        const valRough = document.getElementById('val-rough');
+        const valSketch = document.getElementById('val-sketch');
+        const valPosition = document.getElementById('val-position');
+
+        let originalImage = null;
+        let cachedSketchCanvas = null;
+
+        // Interactive UI Listeners
+        sliderSize.addEventListener('input', (e) => { valSize.innerText = e.target.value + '%'; processEffectsPipeline(); });
+        sliderRough.addEventListener('input', (e) => { valRough.innerText = e.target.value + '%'; processEffectsPipeline(); });
+        sliderPosition.addEventListener('input', (e) => { valPosition.innerText = e.target.value + '%'; processEffectsPipeline(); });
+        sliderSketch.addEventListener('input', (e) => { 
+            valSketch.innerText = e.target.value + '%'; 
+            generateHandDrawnSketch(); 
+            processEffectsPipeline(); 
+        });
+
+        btnUpload.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('click', () => { if(!originalImage) fileInput.click(); });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                originalImage = new Image();
+                originalImage.onload = () => {
+                    placeholder.style.display = 'none';
+                    canvas.style.display = 'block';
+                    setupCanvasDimensions();
+                    generateHandDrawnSketch();
+                    processEffectsPipeline();
+                };
+                originalImage.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        function setupCanvasDimensions() {
+            const maxDimension = 750;
+            let width = originalImage.width;
+            let height = originalImage.height;
+
+            if (width > height && width > maxDimension) {
+                height = Math.round((height * maxDimension) / width);
+                width = maxDimension;
+            } else if (height > maxDimension) {
+                width = Math.round((width * maxDimension) / height);
+                height = maxDimension;
+            }
+            canvas.width = width;
+            canvas.height = height;
+        }
+
+        // Emulates complex Photoshop hand-drawn filtering natively via Canvas blending passes
+        function generateHandDrawnSketch() {
+            if (!originalImage) return;
+
+            cachedSketchCanvas = document.createElement('canvas');
+            cachedSketchCanvas.width = canvas.width;
+            cachedSketchCanvas.height = canvas.height;
+            const sCtx = cachedSketchCanvas.getContext('2d');
+
+            const intensity = parseInt(sliderSketch.value) / 100;
+
+            // Pass A: Desaturated Base Setup
+            sCtx.filter = 'grayscale(1) contrast(1.1) brightness(1.05)';
+            sCtx.drawImage(originalImage, 0, 0, canvas.width, canvas.height);
+            sCtx.filter = 'none';
+
+            // Pass B: Color Dodge Inverse Edge Extraction Loop
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = canvas.width;
+            tempCanvas.height = canvas.height;
+            const tCtx = tempCanvas.getContext('2d');
+            
+            // Invert, desaturate, and apply mild Gaussian blur to pull contour lines
+            tCtx.filter = 'grayscale(1) invert(1) blur(3px)';
+            tCtx.drawImage(originalImage, 0, 0, canvas.width, canvas.height);
+            tCtx.filter = 'none';
+
+            // Overlay onto base using Color Dodge to build pencil outlines
+            sCtx.save();
+            sCtx.globalAlpha = intensity * 0.95;
+            sCtx.globalCompositeOperation = 'color-dodge';
+            sCtx.drawImage(tempCanvas, 0, 0);
+            sCtx.restore();
+
+            // Pass C: Light textured cross-hatching look
+            sCtx.save();
+            sCtx.globalAlpha = 0.08;
+            sCtx.globalCompositeOperation = 'multiply';
+            for (let i = 0; i < canvas.height; i += 3) {
+                sCtx.fillStyle = '#000000';
+                sCtx.fillRect(0, i, canvas.width, 1);
+            }
+            sCtx.restore();
+        }
+
+        function processEffectsPipeline() {
+            if (!originalImage || !cachedSketchCanvas) return;
+
+            const sizeVal = parseInt(sliderSize.value) / 100;
+            const roughVal = parseInt(sliderRough.value);
+            const centerY = (parseInt(sliderPosition.value) / 100) * canvas.height;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 1. DRAW BACKGROUND LAYER (The Hand-Drawn Sketch)
+            ctx.drawImage(cachedSketchCanvas, 0, 0);
+
+            // 2. GENERATE HIGH-DENSITY PROCEDURAL TEAR GEOMETRY
+            const points = generateProceduralTear(canvas.width, canvas.height, centerY, sizeVal, roughVal);
+
+            // 3. DRAW 3D WHITE TORN PAPER BACKING LAYER
+            ctx.save();
+            // Cast soft realistic drop shadow downward over the sketch layer
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+            ctx.shadowBlur = 14;
+            ctx.shadowOffsetY = 5;
+
+            ctx.fillStyle = '#f6f5f2'; // Fine cardstock white tone
+            buildTearPath(ctx, points.outerTop, points.outerBottom);
+            ctx.fill();
+            ctx.restore();
+
+            // 4. MASK AND CARVE OUT CENTRAL WINDOW FOR ORIGINAL COLOR PHOTO
+            ctx.save();
+            buildTearPath(ctx, points.innerTop, points.innerBottom);
+            ctx.clip();
+
+            // Draw clean original image bounded within ripped perimeter
+            ctx.drawImage(originalImage, 0, 0, canvas.width, canvas.height);
+            ctx.restore();
+
+            // 5. EMBED PAPER SHRED GRAIN TEXTURE OVER CUTOUT EDGES
+            ctx.save();
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+            ctx.lineWidth = 1.5;
+            buildTearPath(ctx, points.innerTop, points.innerBottom);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function generateProceduralTear(w, h, centerY, size, roughness) {
+            const outerTop = [];
+            const outerBottom = [];
+            const innerTop = [];
+            const innerBottom = [];
+
+            // Dense segmentation creates organic, non-linear micro-fibers
+            const totalSteps = Math.floor(w / 2.5); 
+            const halfHeight = (h * size) * 0.45;
+
+            const topBaseY = centerY - halfHeight;
+            const botBaseY = centerY + halfHeight;
+
+            // Fixed internal offset creates the white core tear lip look
+            const coreOffset = 3.5 + (roughness * 0.05);
+
+            for (let i = 0; i <= totalSteps; i++) {
+                const x = (i / totalSteps) * w;
+
+                // Microfracture noise calculation using compounding sine waves
+                const wave1 = Math.sin(i * 0.18) * (roughness * 0.22);
+                const wave2 = Math.cos(i * 0.07) * (roughness * 0.15);
+                const randomNoise = (Math.random() - 0.5) * (roughness * 0.18);
+                const combinedNoise = wave1 + wave2 + randomNoise;
+
+                const tY = topBaseY + combinedNoise;
+                const bY = botBaseY - combinedNoise; // Mirror noise inward slightly
+
+                outerTop.push({ x: x, y: tY });
+                outerBottom.push({ x: x, y: bY });
+
+                // Inner clip paths are squeezed inward to expose the underlying layer
+                innerTop.push({ x: x, y: tY + coreOffset + (Math.random() * 1.5) });
+                innerBottom.push({ x: x, y: bY - coreOffset - (Math.random() * 1.5) });
+            }
+
+            return { outerTop, outerBottom, innerTop, innerBottom };
+        }
+
+        function buildTearPath(context, topArray, bottomArray) {
+            context.beginPath();
+            // Draw left-to-right across the top tear seam
+            context.moveTo(topArray[0].x, topArray[0].y);
+            for (let i = 1; i < topArray.length; i++) {
+                context.lineTo(topArray[i].x, topArray[i].y);
+            }
+            // Link straight down the right side wall
+            context.lineTo(canvas.width, bottomArray[bottomArray.length - 1].y);
+            // Trace backward right-to-left across bottom tear seam
+            for (let i = bottomArray.length - 1; i >= 0; i--) {
+                context.lineTo(bottomArray[i].x, bottomArray[i].y);
+            }
+            // Close down left boundary edge wall
+            context.lineTo(0, topArray[0].y);
+            context.closePath();
+        }
+
+        btnSave.addEventListener('click', () => {
+            if (!originalImage) return;
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.96);
+            const link = document.createElement('a');
+            link.download = 'torn_paper_artwork.jpg';
+            link.href = dataUrl;
+            link.click();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sketch Blue Pro</title>
+    <style>
+        :root {
+            --primary: #1a237e; /* Navy Blue Ink Color */
+            --bg-dark: #0a0a0a;
+            --accent: #304ffe;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Roboto', sans-serif;
+            background: var(--bg-dark);
+            color: white;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            padding: 15px;
+            text-align: center;
+            font-weight: 900;
+            font-size: 1rem;
+            letter-spacing: 2px;
+            border-bottom: 1px solid #222;
+        }
+
+        #editor-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+            background: #111;
+        }
+
+        canvas {
+            max-width: 100%;
+            max-height: 100%;
+            background: white;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            border-radius: 4px;
+        }
+
+        .controls {
+            background: #181818;
+            padding: 25px;
+            border-radius: 30px 30px 0 0;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
+        }
+
+        .slider-group { margin-bottom: 20px; }
+
+        .label-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 0.8rem;
+            color: #888;
+            font-weight: bold;
+        }
+
+        input[type=range] {
+            width: 100%;
+            height: 5px;
+            -webkit-appearance: none;
+            background: #333;
+            border-radius: 5px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            background: var(--accent);
+            border-radius: 50%;
+            border: 3px solid #fff;
+        }
+
+        .btn-group { display: flex; gap: 10px; }
+
+        button {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .btn-load { background: #333; color: white; }
+        .btn-save { background: var(--accent); color: white; }
+        button:active { transform: scale(0.95); }
+        #fileInput { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="header">NAVY BLUE SKETCH</div>
+
+    <div id="editor-container">
+        <canvas id="canvas"></canvas>
+    </div>
+
+    <div class="controls">
+        <div class="slider-group">
+            <div class="label-row">
+                <span>SKETCH SHARPNESS</span>
+                <span id="sharpVal">1.5</span>
+            </div>
+            <input type="range" id="sharpness" min="5" max="40" value="15">
+        </div>
+
+        <div class="slider-group">
+            <div class="label-row">
+                <span>INK DENSITY</span>
+                <span id="inkVal">60</span>
+            </div>
+            <input type="range" id="density" min="10" max="100" value="60">
+        </div>
+
+        <div class="btn-group">
+            <button class="btn-load" onclick="document.getElementById('fileInput').click()">LOAD PHOTO</button>
+            <button class="btn-save" onclick="saveImage()">SAVE IMAGE</button>
+        </div>
+    </div>
+
+    <input type="file" id="fileInput" accept="image/*">
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        let originalImg = null;
+
+        document.getElementById('fileInput').onchange = (e) => {
+            const reader = new FileReader();
+            reader.onload = (f) => {
+                const img = new Image();
+                img.onload = () => {
+                    originalImg = img;
+                    applySketch();
+                };
+                img.src = f.target.result;
+            };
+            reader.readAsDataURL(e.target.files[0]);
+        };
+
+        document.getElementById('sharpness').oninput = function() {
+            document.getElementById('sharpVal').innerText = (this.value/10).toFixed(1);
+            applySketch();
+        };
+
+        document.getElementById('density').oninput = function() {
+            document.getElementById('inkVal').innerText = this.value;
+            applySketch();
+        };
+
+        function applySketch() {
+            if (!originalImg) return;
+
+            const maxDim = 1000;
+            let w = originalImg.width;
+            let h = originalImg.height;
+            const scale = Math.min(maxDim / w, maxDim / h);
+            if (scale < 1) { w *= scale; h *= scale; }
+            
+            canvas.width = w;
+            canvas.height = h;
+
+            // 1. Draw original grayscale
+            ctx.filter = 'grayscale(1) contrast(1.2)';
+            ctx.drawImage(originalImg, 0, 0, w, h);
+            ctx.filter = 'none';
+
+            const sharpness = document.getElementById('sharpness').value / 10;
+            const density = document.getElementById('density').value;
+
+            const imgData = ctx.getImageData(0, 0, w, h);
+            const data = imgData.data;
+            const pixels = new Uint8ClampedArray(data);
+
+            // 2. Sobel Edge Detection + Navy Blue Tinting Logic
+            for (let i = 0; i < data.length; i += 4) {
+                const x = (i / 4) % w;
+                const y = Math.floor((i / 4) / w);
+
+                // Simple Edge Detection (Comparing current pixel with neighbors)
+                if (x < w - 1 && y < h - 1) {
+                    const current = pixels[i];
+                    const right = pixels[i + 4];
+                    const down = pixels[i + (w * 4)];
+                    
+                    let diff = Math.abs(current - right) + Math.abs(current - down);
+                    diff *= sharpness; // Sharpness control
+
+                    // If it's an edge (dark stroke) or very dark part of photo
+                    if (diff > (110 - density) || current < 40) {
+                        // Color: Navy Blue (#1a237e)
+                        data[i] = 26;   // R
+                        data[i+1] = 35;  // G
+                        data[i+2] = 126; // B
+                    } else {
+                        // Background: White
+                        data[i] = 255;
+                        data[i+1] = 255;
+                        data[i+2] = 255;
+                    }
+                }
+                data[i+3] = 255;
+            }
+
+            ctx.putImageData(imgData, 0, 0);
+            
+            // 3. Optional: Add a subtle paper texture/blur for smoothness
+            ctx.globalCompositeOperation = 'multiply';
+            ctx.filter = 'blur(0.3px)';
+            ctx.drawImage(canvas, 0, 0);
+            ctx.globalCompositeOperation = 'source-over';
+        }
+
+        function saveImage() {
+            const link = document.createElement('a');
+            link.download = 'navy_sketch.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        window.onload = () => {
+            canvas.width = 400; canvas.height = 400;
+            ctx.fillStyle = "#fff"; ctx.fillRect(0,0,400,400);
+            ctx.fillStyle = "#ccc"; ctx.textAlign = "center";
+            ctx.fillText("LOAD IMAGE FOR BLUE SKETCH", 200, 200);
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Cartoon Vector Painting Studio</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        html, body {
+            min-height: 100%;
+            min-height: 100dvh;
+            background: #0b0d13;
+            color: #f1f5f9;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            overflow-y: auto;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            padding-top: env(safe-area-inset-top, 0px);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+
+        header {
+            padding: 18px 16px;
+            text-align: center;
+            background: rgba(11, 13, 19, 0.85);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+
+        header h1 {
+            font-size: 1rem;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: #f8fafc;
+        }
+
+        header span {
+            display: block;
+            font-size: 0.68rem;
+            color: #facc15;
+            letter-spacing: 1px;
+            margin-top: 4px;
+            font-weight: 700;
+        }
+
+        .workspace {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            min-height: 340px;
+        }
+
+        .canvas-container {
+            width: 100%;
+            max-width: 480px;
+            height: 400px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            border-radius: 24px;
+            overflow: hidden;
+            background: #050608;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            box-shadow: inset 0 0 40px rgba(0,0,0,0.7);
+        }
+
+        canvas {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            border-radius: 12px;
+            display: none;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+        }
+
+        .placeholder {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #475569;
+            cursor: pointer;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .placeholder .icon-box {
+            width: 68px;
+            height: 68px;
+            background: rgba(250, 204, 21, 0.06);
+            border: 1px solid rgba(250, 204, 21, 0.2);
+            border-radius: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+
+        .placeholder svg {
+            width: 34px;
+            height: 34px;
+            fill: #facc15;
+        }
+
+        .placeholder p {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #94a3b8;
+        }
+
+        .controls-panel {
+            background: #11141d;
+            border-top: 1px solid rgba(255, 255, 255, 0.07);
+            padding: 24px;
+            border-radius: 32px 32px 0 0;
+            margin-top: auto;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.3);
+        }
+
+        .slider-group {
+            margin-bottom: 16px;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: #94a3b8;
+            margin-bottom: 8px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .slider-label span.val {
+            background: rgba(250, 204, 21, 0.12);
+            color: #facc15;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-family: monospace;
+        }
+
+        .color-picker-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+            background: rgba(255,255,255,0.02);
+            padding: 10px 14px;
+            border-radius: 14px;
+            border: 1px solid rgba(255,255,255,0.04);
+        }
+
+        .color-picker-label {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        input[type="color"] {
+            -webkit-appearance: none;
+            border: none;
+            width: 44px;
+            height: 28px;
+            border-radius: 8px;
+            cursor: pointer;
+            background: none;
+        }
+
+        input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+
+        input[type="color"]::-webkit-color-swatch {
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: #1e293b;
+            border-radius: 2px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #ffffff;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            cursor: pointer;
+            border: 2px solid #facc15;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1.3fr;
+            gap: 14px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            font-family: inherit;
+            font-weight: 700;
+            font-size: 0.9rem;
+            height: 50px;
+            border: none;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-upload {
+            background: #1e293b;
+            color: #cbd5e1;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .btn-save {
+            background: #facc15;
+            color: #0f172a;
+            box-shadow: 0 4px 16px rgba(250, 204, 21, 0.2);
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        #file-input {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Cartoon Vector Studio</h1>
+        <span>SHADOW QUANTIZER & STENCIL COMPOSITOR</span>
+    </header>
+
+    <div class="workspace">
+        <div class="canvas-container" id="drop-zone">
+            <div class="placeholder" id="placeholder">
+                <div class="icon-box">
+                    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                </div>
+                <p>Upload portrait or object photo</p>
+            </div>
+            <canvas id="editorCanvas"></canvas>
+        </div>
+    </div>
+
+    <div class="controls-panel">
+        <div class="slider-group">
+            <div class="slider-label">
+                <span>Ink Threshold (Shadow Detail)</span>
+                <span class="val" id="val-ink">45%</span>
+            </div>
+            <input type="range" id="slider-ink" min="15" max="85" value="45" step="1">
+        </div>
+
+        <div class="slider-group">
+            <div class="slider-label">
+                <span>Vector Edge Smoothing</span>
+                <span class="val" id="val-smooth">60%</span>
+            </div>
+            <input type="range" id="slider-smooth" min="10" max="100" value="60" step="2">
+        </div>
+
+        <div class="slider-group">
+            <div class="slider-label">
+                <span>White Sticker Border Width</span>
+                <span class="val" id="val-border">16px</span>
+            </div>
+            <input type="range" id="slider-border" min="0" max="35" value="16" step="1">
+        </div>
+
+        <div class="slider-group">
+            <div class="slider-label">
+                <span>Background Isolation Mask</span>
+                <span class="val" id="val-mask">85%</span>
+            </div>
+            <input type="range" id="slider-mask" min="10" max="100" value="85" step="1">
+        </div>
+
+        <div class="color-picker-group">
+            <span class="color-picker-label">Pop-Art Canvas Background</span>
+            <input type="color" id="color-bg" value="#ffe600">
+        </div>
+
+        <div class="action-buttons">
+            <button class="btn btn-upload" id="btn-upload">New Source</button>
+            <button class="btn btn-save" id="btn-save">Export Artwork</button>
+        </div>
+    </div>
+
+    <input type="file" id="file-input" accept="image/*">
+
+    <script>
+        const canvas = document.getElementById('editorCanvas');
+        const ctx = canvas.getContext('2d');
+        const fileInput = document.getElementById('file-input');
+        const placeholder = document.getElementById('placeholder');
+        const dropZone = document.getElementById('drop-zone');
+        const btnUpload = document.getElementById('btn-upload');
+        const btnSave = document.getElementById('btn-save');
+
+        const sliderInk = document.getElementById('slider-ink');
+        const sliderSmooth = document.getElementById('slider-smooth');
+        const sliderBorder = document.getElementById('slider-border');
+        const sliderMask = document.getElementById('slider-mask');
+        const colorBg = document.getElementById('color-bg');
+
+        const valInk = document.getElementById('val-ink');
+        const valSmooth = document.getElementById('val-smooth');
+        const valBorder = document.getElementById('val-border');
+        const valMask = document.getElementById('val-mask');
+
+        let originalImage = null;
+
+        // Interactive UI Bindings
+        sliderInk.addEventListener('input', (e) => { valInk.innerText = e.target.value + '%'; processVectorPipeline(); });
+        sliderSmooth.addEventListener('input', (e) => { valSmooth.innerText = e.target.value + '%'; processVectorPipeline(); });
+        sliderBorder.addEventListener('input', (e) => { valBorder.innerText = e.target.value + 'px'; processVectorPipeline(); });
+        sliderMask.addEventListener('input', (e) => { valMask.innerText = e.target.value + '%'; processVectorPipeline(); });
+        colorBg.addEventListener('input', () => { processVectorPipeline(); });
+
+        btnUpload.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('click', () => { if(!originalImage) fileInput.click(); });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                originalImage = new Image();
+                originalImage.onload = () => {
+                    placeholder.style.display = 'none';
+                    canvas.style.display = 'block';
+                    setupCanvasDimensions();
+                    processVectorPipeline();
+                };
+                originalImage.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        function setupCanvasDimensions() {
+            const maxDimension = 800;
+            let width = originalImage.width;
+            let height = originalImage.height;
+
+            if (width > height && width > maxDimension) {
+                height = Math.round((height * maxDimension) / width);
+                width = maxDimension;
+            } else if (height > maxDimension) {
+                width = Math.round((width * maxDimension) / height);
+                height = maxDimension;
+            }
+            canvas.width = width;
+            canvas.height = height;
+        }
+
+        function processVectorPipeline() {
+            if (!originalImage) return;
+
+            const inkVal = parseInt(sliderInk.value);
+            const smoothVal = parseInt(sliderSmooth.value);
+            const borderWidth = parseInt(sliderBorder.value);
+            const maskVal = parseInt(sliderMask.value) / 100;
+            const bgColor = colorBg.value;
+
+            // Step 1: Create a temporary canvas for vector abstraction & background clipping
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = canvas.width;
+            tempCanvas.height = canvas.height;
+            const tCtx = tempCanvas.getContext('2d');
+
+            // Apply bilinear downscale/upscale emulation based on smoothing setting to round hard pixel edges natively
+            if (smoothVal > 15) {
+                const scaleFactor = Math.max(0.15, 1 - (smoothVal / 115));
+                const sw = Math.round(canvas.width * scaleFactor);
+                const sh = Math.round(canvas.height * scaleFactor);
+                
+                const scaleCanvas = document.createElement('canvas');
+                scaleCanvas.width = sw;
+                scaleCanvas.height = sh;
+                const sCtx = scaleCanvas.getContext('2d');
+                sCtx.drawImage(originalImage, 0, 0, sw, sh);
+                
+                tCtx.imageSmoothingEnabled = true;
+                tCtx.imageSmoothingQuality = 'high';
+                tCtx.drawImage(scaleCanvas, 0, 0, sw, sh, 0, 0, canvas.width, canvas.height);
+            } else {
+                tCtx.drawImage(originalImage, 0, 0, canvas.width, canvas.height);
+            }
+
+            // Step 2: Pixel-level cartoon posterization and alpha-isolation loop
+            const imgData = tCtx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imgData.data;
+            const inkThreshold = (inkVal / 100) * 255;
+            const isolationCutoff = maskVal * 255;
+
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+
+                // Calculate perceptual luminance
+                const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+
+                // Simple auto-isolation cutoff: if pixel matches standard backdrop brightness, turn transparent
+                if (lum > isolationCutoff) {
+                    data[i + 3] = 0; // Translucent clear alpha channel
+                    continue;
+                }
+
+                // Apply sharp vector-ink quantized color stepping (Matching reference art styles)
+                if (lum < inkThreshold * 0.6) {
+                    // Deep comic shadow ink
+                    data[i] = 18; data[i + 1] = 20; data[i + 2] = 26;
+                } else if (lum < inkThreshold) {
+                    // Dark midtone transitions
+                    data[i] = 71; data[i + 1] = 85; data[i + 2] = 105;
+                } else if (lum < inkThreshold * 1.4) {
+                    // Light vector details
+                    data[i] = 203; data[i + 1] = 213; data[i + 2] = 225;
+                } else {
+                    // Clean solid highlights
+                    data[i] = 248; data[i + 1] = 250; data[i + 2] = 252;
+                }
+            }
+            tCtx.putImageData(imgData, 0, 0);
+
+            // Step 3: Clear main workspace and draw solid user-selected Pop-Art Background Color
+            ctx.fillStyle = bgColor;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Step 4: Construct the thick white outline vector border around the isolated graphic stencil
+            if (borderWidth > 0) {
+                ctx.save();
+                // Mathematical alpha-channel inflation simulation via a high-density radial projection matrix
+                const angleSteps = 24; 
+                for (let r = 0; r < borderWidth; r += 1.5) {
+                    for (let d = 0; d < angleSteps; d++) {
+                        const angle = (d / angleSteps) * Math.PI * 2;
+                        const ox = Math.cos(angle) * r;
+                        const oy = Math.sin(angle) * r;
+                        
+                        // Render a shadow canvas mask entirely in flat white
+                        ctx.globalCompositeOperation = 'source-over';
+                        ctx.shadowColor = 'transparent';
+                        ctx.drawImage(tempCanvas, ox, oy);
+                    }
+                }
+                
+                // Color overlay the alpha inflation block to solid stark white
+                ctx.globalCompositeOperation = 'source-in';
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.restore();
+            }
+
+            // Step 5: Overlay the final processed cartoon painting on top of the generated border profile
+            ctx.drawImage(tempCanvas, 0, 0);
+        }
+
+        btnSave.addEventListener('click', () => {
+            if (!originalImage) return;
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+            const link = document.createElement('a');
+            link.download = 'cartoon_vector_painting.jpg';
+            link.href = dataUrl;
+            link.click();
+        });
+    </script>
+</body>
+</html>

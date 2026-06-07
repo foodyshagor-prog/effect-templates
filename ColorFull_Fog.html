@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>ColorFull Fog · Exact Photo Effect</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      min-height: 100vh;
+      background: radial-gradient(circle at 30% 10%, #0c0e1c, #020308);
+      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, sans-serif;
+      padding: 1rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* premium glass card */
+    .tool-card {
+      max-width: 560px;
+      width: 100%;
+      margin: 0 auto;
+      background: rgba(8, 10, 20, 0.7);
+      backdrop-filter: blur(16px);
+      border-radius: 2.2rem;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 30px 50px -15px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+      overflow: hidden;
+      padding: 1.5rem 1.25rem 1.8rem;
+    }
+
+    .brand {
+      text-align: center;
+      margin-bottom: 1.2rem;
+    }
+
+    .brand h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #FFFFFF, #FF9A9E, #FAD0C4, #FBC2EB, #A18CD1);
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+      letter-spacing: -0.5px;
+      text-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    .brand span {
+      font-size: 0.7rem;
+      font-weight: 500;
+      background: rgba(255,200,255,0.18);
+      padding: 4px 14px;
+      border-radius: 40px;
+      color: #cfc9ff;
+      display: inline-block;
+      margin-top: 6px;
+      backdrop-filter: blur(4px);
+    }
+
+    .canvas-area {
+      background: #03040b80;
+      border-radius: 1.8rem;
+      padding: 0.6rem;
+      margin-bottom: 1.4rem;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      border-radius: 1.4rem;
+      background: #0a0c16;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+      cursor: pointer;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 1.2rem;
+    }
+
+    .upload-btn, .save-btn {
+      flex: 1;
+      background: rgba(25, 28, 45, 0.9);
+      border: 1px solid rgba(140, 130, 220, 0.5);
+      border-radius: 3rem;
+      padding: 12px 0;
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: #eef3ff;
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .save-btn {
+      background: linear-gradient(105deg, #a26eff, #e25e9e);
+      border: none;
+      box-shadow: 0 6px 14px rgba(162, 110, 255, 0.4);
+      color: white;
+    }
+
+    .upload-btn:active, .save-btn:active {
+      transform: scale(0.96);
+      opacity: 0.85;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .control-panel {
+      background: rgba(0, 0, 0, 0.45);
+      border-radius: 1.8rem;
+      padding: 1rem 1.2rem;
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,200,0.08);
+    }
+
+    .slider-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .slider-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #cdd6ff;
+    }
+
+    input[type="range"] {
+      flex: 2;
+      height: 4px;
+      -webkit-appearance: none;
+      background: linear-gradient(90deg, #ff90b3, #b77eff, #6ad4ff);
+      border-radius: 10px;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      background: white;
+      border-radius: 50%;
+      border: 2px solid #c5a3ff;
+      box-shadow: 0 0 6px #f0f;
+      cursor: pointer;
+    }
+
+    .intensity-badge {
+      background: #1b1f32;
+      padding: 4px 14px;
+      border-radius: 30px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #efdbff;
+      min-width: 55px;
+      text-align: center;
+    }
+
+    .toggle-switch {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      margin-top: 8px;
+    }
+
+    .toggle-item {
+      background: #1b1f2faa;
+      border-radius: 50px;
+      padding: 6px 16px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: white;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      backdrop-filter: blur(4px);
+    }
+
+    .toggle-item input {
+      width: 40px;
+      height: 20px;
+      appearance: none;
+      background: #2f334e;
+      border-radius: 30px;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .toggle-item input:checked {
+      background: #bd7eff;
+    }
+
+    .toggle-item input::before {
+      content: "";
+      width: 16px;
+      height: 16px;
+      background: white;
+      border-radius: 50%;
+      position: absolute;
+      top: 2px;
+      left: 3px;
+      transition: 0.2s;
+    }
+
+    .toggle-item input:checked::before {
+      left: 20px;
+    }
+
+    .info-note {
+      text-align: center;
+      margin-top: 1rem;
+      font-size: 0.68rem;
+      color: #9aa2e0;
+      background: rgba(0,0,0,0.3);
+      width: fit-content;
+      margin-left: auto;
+      margin-right: auto;
+      padding: 5px 14px;
+      border-radius: 40px;
+    }
+
+    @media (max-width: 480px) {
+      body { padding: 0.75rem; }
+      .tool-card { padding: 1.2rem 1rem; }
+      .brand h1 { font-size: 1.7rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="tool-card">
+  <div class="brand">
+    <h1>🌈 COLORFULLFOG</h1>
+    <span>PHOTOEFFECT · prismatic haze</span>
+  </div>
+
+  <div class="canvas-area">
+    <canvas id="photoCanvas" width="640" height="520" style="width:100%; aspect-ratio:640/520"></canvas>
+  </div>
+
+  <div class="button-group">
+    <label class="upload-btn">
+      📷  Upload
+      <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp">
+    </label>
+    <button class="save-btn" id="saveImageBtn">💾  Save Image</button>
+  </div>
+
+  <div class="control-panel">
+    <div class="slider-row">
+      <span class="slider-label">🌀 Fog density</span>
+      <input type="range" id="fogIntensity" min="0" max="1" step="0.01" value="0.85">
+      <span class="intensity-badge" id="intensityVal">0.85</span>
+    </div>
+    <div class="toggle-switch">
+      <label class="toggle-item">
+        <span>✨ FOG ACTIVE</span>
+        <input type="checkbox" id="toggleFog" checked>
+      </label>
+    </div>
+  </div>
+  <div class="info-note">
+    🎨 exact same colorful fog — vibrant mist + screen blend
+  </div>
+</div>
+
+<script>
+  (function(){
+    // ----- DOM elements -----
+    const canvas = document.getElementById('photoCanvas');
+    const ctx = canvas.getContext('2d');
+    const fileInput = document.getElementById('fileInput');
+    const saveBtn = document.getElementById('saveImageBtn');
+    const intensitySlider = document.getElementById('fogIntensity');
+    const intensitySpan = document.getElementById('intensityVal');
+    const toggleFog = document.getElementById('toggleFog');
+
+    let originalImage = null;      // HTMLImageElement
+    let imageLoaded = false;
+    let needsRedraw = true;
+
+    // ----- CORE FOG GENERATOR (matches "COLORFULLFOG" style) -----
+    // Creates large, luminous overlapping gradients + fullscreen chromatic mist
+    function generateRichFogLayer(width, height, intensity) {
+      if (!width || !height) return null;
+      const fogCanvas = document.createElement('canvas');
+      fogCanvas.width = width;
+      fogCanvas.height = height;
+      const fogCtx = fogCanvas.getContext('2d');
+      fogCtx.clearRect(0, 0, width, height);
+      
+      // 1) Big sweeping colorful gradients (like colored clouds)
+      const colorStops = [
+        { x: 0.2, y: 0.3, color1: '#ff4d6d', color2: '#ff9eb5', size: 0.55 },
+        { x: 0.75, y: 0.25, color1: '#3b82f6', color2: '#8b5cf6', size: 0.6 },
+        { x: 0.5, y: 0.7, color1: '#facc15', color2: '#ffb347', size: 0.58 },
+        { x: 0.85, y: 0.8, color1: '#06b6d4', color2: '#a855f7', size: 0.5 },
+        { x: 0.1, y: 0.85, color1: '#ec4899', color2: '#f43f5e', size: 0.52 },
+        { x: 0.45, y: 0.15, color1: '#a78bfa', color2: '#c084fc', size: 0.48 },
+        { x: 0.95, y: 0.5, color1: '#2dd4bf', color2: '#14b8a6', size: 0.5 },
+        { x: 0.05, y: 0.5, color1: '#fb7185', color2: '#fda4af', size: 0.54 }
+      ];
+      
+      for (let spot of colorStops) {
+        const cx = spot.x * width;
+        const cy = spot.y * height;
+        const radius = Math.min(width, height) * spot.size;
+        const grad = fogCtx.createRadialGradient(cx, cy, radius * 0.1, cx, cy, radius);
+        const alphaVal = Math.min(0.85, 0.35 + intensity * 0.55);
+        const rgb1 = hexToRgb(spot.color1);
+        const rgb2 = hexToRgb(spot.color2);
+        if (rgb1 && rgb2) {
+          grad.addColorStop(0, `rgba(${rgb1.r}, ${rgb1.g}, ${rgb1.b}, ${alphaVal * 0.95})`);
+          grad.addColorStop(0.55, `rgba(${rgb2.r}, ${rgb2.g}, ${rgb2.b}, ${alphaVal * 0.7})`);
+          grad.addColorStop(1, `rgba(${rgb2.r}, ${rgb2.g}, ${rgb2.b}, 0)`);
+        } else {
+          grad.addColorStop(0, `rgba(255, 100, 150, ${alphaVal})`);
+          grad.addColorStop(1, `rgba(100, 80, 200, 0)`);
+        }
+        fogCtx.beginPath();
+        fogCtx.arc(cx, cy, radius, 0, Math.PI * 2);
+        fogCtx.fillStyle = grad;
+        fogCtx.fill();
+      }
+      
+      // 2) Additional high-saturation neon bursts (for that "popping" fog)
+      const neonSpots = [
+        { x: 0.33, y: 0.44, color: '#ff44cc', rad: 0.28 },
+        { x: 0.67, y: 0.62, color: '#44ffdd', rad: 0.3 },
+        { x: 0.88, y: 0.27, color: '#ffaa33', rad: 0.26 },
+        { x: 0.12, y: 0.71, color: '#aa66ff', rad: 0.27 },
+        { x: 0.55, y: 0.88, color: '#ff6699', rad: 0.29 }
+      ];
+      fogCtx.globalCompositeOperation = 'lighter';
+      for (let neon of neonSpots) {
+        const cx = neon.x * width;
+        const cy = neon.y * height;
+        const rad = Math.min(width, height) * neon.rad;
+        const rgbNeon = hexToRgb(neon.color);
+        if (rgbNeon) {
+          const grd = fogCtx.createRadialGradient(cx, cy, 5, cx, cy, rad);
+          const alphaGlow = 0.48 * intensity;
+          grd.addColorStop(0, `rgba(${rgbNeon.r}, ${rgbNeon.g}, ${rgbNeon.b}, ${alphaGlow + 0.2})`);
+          grd.addColorStop(0.7, `rgba(${rgbNeon.r}, ${rgbNeon.g}, ${rgbNeon.b}, ${alphaGlow * 0.6})`);
+          grd.addColorStop(1, `rgba(${rgbNeon.r}, ${rgbNeon.g}, ${rgbNeon.b}, 0)`);
+          fogCtx.fillStyle = grd;
+          fogCtx.beginPath();
+          fogCtx.arc(cx, cy, rad, 0, Math.PI*2);
+          fogCtx.fill();
+        }
+      }
+      fogCtx.globalCompositeOperation = 'source-over';
+      
+      // 3) Gentle full-screen rainbow gradient mist for depth
+      const linearGrad = fogCtx.createLinearGradient(0, 0, width, height);
+      linearGrad.addColorStop(0, `rgba(255, 120, 180, ${0.2 * intensity})`);
+      linearGrad.addColorStop(0.3, `rgba(120, 200, 255, ${0.22 * intensity})`);
+      linearGrad.addColorStop(0.7, `rgba(255, 220, 100, ${0.2 * intensity})`);
+      linearGrad.addColorStop(1, `rgba(200, 100, 255, ${0.18 * intensity})`);
+      fogCtx.fillStyle = linearGrad;
+      fogCtx.fillRect(0, 0, width, height);
+      
+      // Final blur to create smooth fog diffusion
+      fogCtx.filter = 'blur(16px)';
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = width;
+      tempCanvas.height = height;
+      const tempCtx = tempCanvas.getContext('2d');
+      tempCtx.drawImage(fogCanvas, 0, 0);
+      fogCtx.filter = 'blur(12px)';
+      fogCtx.clearRect(0, 0, width, height);
+      fogCtx.drawImage(tempCanvas, 0, 0);
+      fogCtx.filter = 'none';
+      
+      return fogCanvas;
+    }
+    
+    function hexToRgb(hex) {
+      let shorthand = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+      let h = hex.replace(shorthand, (m, r, g, b) => r + r + g + g + b + b);
+      let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(h);
+      return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+      } : null;
+    }
+    
+    // ----- MAIN RENDER: photo + fog effect (exact match to reference) -----
+    function renderEffect() {
+      if (!originalImage || !originalImage.complete || originalImage.naturalWidth === 0) {
+        ctx.fillStyle = "#0b0e1a";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.font = "500 15px 'Inter'";
+        ctx.fillStyle = "#b4b9ff";
+        ctx.fillText("✨ Upload a photo to apply COLORFULLFOG", canvas.width/2-150, canvas.height/2);
+        return;
+      }
+      
+      // set canvas dimensions to proper scale (preserve ratio, max width ~520)
+      let maxW = Math.min(window.innerWidth - 70, 580);
+      let imgW = originalImage.naturalWidth;
+      let imgH = originalImage.naturalHeight;
+      let ratio = imgW / imgH;
+      let targetW = maxW;
+      let targetH = targetW / ratio;
+      if (targetH > 550) {
+        targetH = 550;
+        targetW = targetH * ratio;
+      }
+      canvas.width = Math.floor(targetW);
+      canvas.height = Math.floor(targetH);
+      
+      // draw original image
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(originalImage, 0, 0, canvas.width, canvas.height);
+      
+      const fogEnabled = toggleFog.checked;
+      if (!fogEnabled) return;
+      
+      let intensity = parseFloat(intensitySlider.value);
+      intensity = Math.min(1, Math.max(0, intensity));
+      
+      // generate fog layer
+      const fogLayer = generateRichFogLayer(canvas.width, canvas.height, intensity);
+      if (fogLayer) {
+        // Main blend: Screen mode creates vibrant, dreamy fog (exactly like reference image)
+        ctx.save();
+        ctx.globalCompositeOperation = 'screen';
+        ctx.drawImage(fogLayer, 0, 0);
+        // Soft-light addition to deepen colors (enhances "COLORFULLFOG" pop)
+        ctx.globalCompositeOperation = 'soft-light';
+        ctx.globalAlpha = 0.45 * intensity;
+        ctx.drawImage(fogLayer, 0, 0);
+        // Color dodge micro-layer for extra luminosity
+        ctx.globalCompositeOperation = 'color-dodge';
+        ctx.globalAlpha = 0.22 * intensity;
+        ctx.drawImage(fogLayer, 0, 0);
+        ctx.restore();
+        
+        // final subtle overlay for richness
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.globalAlpha = 0.12 * intensity;
+        ctx.drawImage(fogLayer, 0, 0);
+        ctx.restore();
+      }
+    }
+    
+    // ----- load image from file or demo -----
+    function loadImageFromFile(file) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          originalImage = img;
+          imageLoaded = true;
+          renderEffect();
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+    
+    function loadDemoImage() {
+      // high-res demo with nature + bright colors to showcase fog effect
+      const demoUrl = 'https://picsum.photos/id/30/1000/700';  // coffee & laptop but colorful vibe
+      const img = new Image();
+      img.crossOrigin = "Anonymous";
+      img.onload = () => {
+        originalImage = img;
+        imageLoaded = true;
+        renderEffect();
+      };
+      img.onerror = () => {
+        // fallback: create a test gradient image (offline safe)
+        const offCanvas = document.createElement('canvas');
+        offCanvas.width = 800;
+        offCanvas.height = 600;
+        const offCtx = offCanvas.getContext('2d');
+        offCtx.fillStyle = "#1e2235";
+        offCtx.fillRect(0,0,800,600);
+        offCtx.fillStyle = "#ffc8dd";
+        offCtx.font = "bold 28px system-ui";
+        offCtx.fillText("🌄 demo photo", 290, 280);
+        offCtx.fillStyle = "#b0c4ff";
+        offCtx.font = "16px system-ui";
+        offCtx.fillText("upload any image for fog effect", 280, 360);
+        const fallbackImg = new Image();
+        fallbackImg.src = offCanvas.toDataURL();
+        fallbackImg.onload = () => {
+          originalImage = fallbackImg;
+          imageLoaded = true;
+          renderEffect();
+        };
+      };
+      img.src = demoUrl;
+    }
+    
+    // ----- event listeners -----
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files && e.target.files[0]) {
+        loadImageFromFile(e.target.files[0]);
+      }
+    });
+    
+    intensitySlider.addEventListener('input', (e) => {
+      const val = parseFloat(e.target.value);
+      intensitySpan.innerText = val.toFixed(2);
+      if (imageLoaded && originalImage) renderEffect();
+    });
+    
+    toggleFog.addEventListener('change', () => {
+      if (imageLoaded && originalImage) renderEffect();
+      else if (!originalImage) loadDemoImage();
+      else renderEffect();
+    });
+    
+    saveBtn.addEventListener('click', () => {
+      if (!originalImage) {
+        alert("Please upload an image first.");
+        return;
+      }
+      renderEffect(); // ensure latest
+      try {
+        const link = document.createElement('a');
+        link.download = `colorful_fog_${Date.now()}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      } catch(err) {
+        alert("Could not save image.");
+      }
+    });
+    
+    // handle resize / orientation
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (originalImage && imageLoaded) renderEffect();
+      }, 120);
+    });
+    window.addEventListener('orientationchange', () => {
+      setTimeout(() => {
+        if (originalImage && imageLoaded) renderEffect();
+      }, 80);
+    });
+    
+    // start with demo image
+    loadDemoImage();
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Advanced Diagonal Slice Studio</title>
+    <style>
+        :root {
+            --bg-main: #09090b;
+            --bg-card: #121216;
+            --bg-item: #1c1c24;
+            --accent: #00E676;
+            --text-main: #f5f5f7;
+            --text-muted: #8e8e93;
+            --border: #222227;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            padding: 14px;
+            text-align: center;
+            background: linear-gradient(to bottom, rgba(18,18,22,0.9), rgba(18,18,22,0));
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            z-index: 10;
+        }
+
+        header h1 {
+            font-size: 1rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: var(--text-main);
+        }
+
+        /* Workspace / Preview */
+        .preview-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            background-image: radial-gradient(circle at center, #181820 0%, #09090b 100%);
+            overflow: hidden;
+        }
+
+        canvas {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 16px;
+            box-shadow: 0 24px 48px rgba(0,0,0,0.6);
+            object-fit: contain;
+            background-color: var(--bg-card);
+        }
+
+        /* Bottom Controls Sheet */
+        .controls-card {
+            background-color: var(--bg-card);
+            border-top: 1px solid var(--border);
+            border-radius: 24px 24px 0 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            max-height: 55vh;
+            overflow-y: auto;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
+        }
+
+        /* Horizontal 10 Options Presets Bar */
+        .presets-section {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .presets-title {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .presets-container {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+            scroll-snap-type: x proximity;
+            -webkit-overflow-scrolling: touch;
+        }
+        .presets-container::-webkit-scrollbar {
+            display: none;
+        }
+        .preset-btn {
+            flex: 0 0 auto;
+            padding: 10px 16px;
+            background-color: var(--bg-item);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text-main);
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .preset-btn.active {
+            background-color: var(--text-main);
+            color: var(--bg-main);
+            border-color: var(--text-main);
+            font-weight: 600;
+        }
+
+        /* Sliders Layout */
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .control-label span:last-child {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: #272732;
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: var(--text-main);
+            border: 2px solid var(--bg-main);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+            cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-thumb:active {
+            background: var(--accent);
+        }
+
+        /* Color Adjustments & Actions */
+        .bottom-row {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin-top: 4px;
+        }
+
+        .color-field {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg-item);
+            padding: 10px 12px;
+            border-radius: 14px;
+            border: 1px solid var(--border);
+        }
+
+        input[type="color"] {
+            -webkit-appearance: none;
+            border: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            background: none;
+        }
+        input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+        input[type="color"]::-webkit-color-swatch {
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 50%;
+        }
+
+        .btn {
+            flex: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            height: 48px;
+            border-radius: 14px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        .btn:active { transform: scale(0.97); }
+        .btn-secondary { background-color: var(--bg-item); color: var(--text-main); border: 1px solid var(--border); }
+        .btn-primary { background: linear-gradient(135deg, #00E676 0%, #00B0FF 100%); color: #000; }
+
+        .controls-card::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Slice Engine Studio</h1>
+    </header>
+
+    <div class="preview-container">
+        <canvas id="editorCanvas"></canvas>
+    </div>
+
+    <div class="controls-card">
+        <div class="presets-section">
+            <div class="presets-title">Slice Options (10 Styles)</div>
+            <div class="presets-container" id="presetsTray"></div>
+        </div>
+
+        <div class="control-group">
+            <div class="control-label"><span>Slice Count</span><span id="val-slices">6</span></div>
+            <input type="range" id="sliceCount" min="3" max="10" value="6">
+        </div>
+
+        <div class="control-group">
+            <div class="control-label"><span>Stagger Deviation</span><span id="val-stagger">130</span></div>
+            <input type="range" id="stagger" min="0" max="250" value="130">
+        </div>
+
+        <div class="control-group">
+            <div class="control-label"><span>Slice Scale Width</span><span id="val-width">115</span></div>
+            <input type="range" id="sliceWidth" min="50" max="250" value="115">
+        </div>
+
+        <div class="control-group">
+            <div class="control-label"><span>Gap Spacing</span><span id="val-gap">16</span></div>
+            <input type="range" id="gap" min="0" max="40" value="16">
+        </div>
+
+        <div class="control-group">
+            <div class="control-label"><span>Rotation Angle</span><span id="val-angle">-42°</span></div>
+            <input type="range" id="angle" min="-90" max="90" value="-42">
+        </div>
+
+        <div class="bottom-row">
+            <div class="color-field">
+                <input type="color" id="colorLight" value="#FFC0A8">
+                <input type="color" id="colorDark" value="#1a1a1e">
+            </div>
+            <button class="btn btn-secondary" id="btnUpload" style="flex:0.8;">Replace</button>
+            <button class="btn btn-primary" id="btnSave">Save Image</button>
+        </div>
+    </div>
+
+    <input type="file" id="fileInput" accept="image/*" style="display: none;">
+
+    <script>
+        const canvas = document.getElementById('editorCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Setup DOM nodes
+        const inputSliceCount = document.getElementById('sliceCount');
+        const inputStagger = document.getElementById('stagger');
+        const inputWidth = document.getElementById('sliceWidth');
+        const inputGap = document.getElementById('gap');
+        const inputAngle = document.getElementById('angle');
+        const inputColorLight = document.getElementById('colorLight');
+        const inputColorDark = document.getElementById('colorDark');
+        const fileInput = document.getElementById('fileInput');
+        const presetsTray = document.getElementById('presetsTray');
+
+        let sourceImage = new Image();
+        let activePattern = [-0.4, 0.2, 0.6, -0.1, -0.5, -0.8, -0.2, 0.3];
+
+        // Definitions of the 10 custom geometric configuration arrays
+        const sliceOptions = [
+            { id: 0, name: "1. Iconic Stagger", slices: 6, width: 115, gap: 16, stagger: 130, angle: -42, pattern: [-0.4, 0.2, 0.6, -0.1, -0.5, -0.8] },
+            { id: 1, name: "2. Full Canvas Span", slices: 9, width: 110, gap: 12, stagger: 90, angle: -40, pattern: [-0.6, -0.3, 0, 0.3, 0.6, 0.3, 0, -0.3, -0.6] },
+            { id: 2, name: "3. Massive Trilogy", slices: 3, width: 280, gap: 24, stagger: 150, angle: -45, pattern: [-0.5, 0.5, -0.2] },
+            { id: 3, name: "4. Step Ascent", slices: 7, width: 115, gap: 14, stagger: 160, angle: -42, pattern: [-0.9, -0.6, -0.3, 0, 0.3, 0.6, 0.9] },
+            { id: 4, name: "5. Fluid Wave", slices: 8, width: 105, gap: 15, stagger: 120, angle: -38, pattern: [0.5, -0.5, 0.5, -0.5, 0.5, -0.5, 0.5, -0.5] },
+            { id: 5, name: "6. Target Center", slices: 6, width: 130, gap: 18, stagger: 160, angle: -42, pattern: [-0.8, -0.3, 0.6, 0.6, -0.3, -0.8] },
+            { id: 6, name: "7. Clean Blocks", slices: 4, width: 210, gap: 35, stagger: 0, angle: -45, pattern: [0, 0, 0, 0] },
+            { id: 7, name: "8. Macro Shutter", slices: 10, width: 85, gap: 10, stagger: 110, angle: -45, pattern: [-0.7, -0.4, -0.1, 0.2, 0.5, 0.5, 0.2, -0.1, -0.4, -0.7] },
+            { id: 8, name: "9. Inverted Pitch", slices: 6, width: 115, gap: 16, stagger: 130, angle: 42, pattern: [-0.8, -0.5, -0.1, 0.3, 0.6, 0.1] },
+            { id: 9, name: "10. Cosmic Chaos", slices: 7, width: 120, gap: 16, stagger: 210, angle: -48, pattern: [0.8, -0.9, 0.4, -0.7, 0.9, -0.3, 0.6] }
+        ];
+
+        window.addEventListener('DOMContentLoaded', () => {
+            buildOptionsUI();
+            setupInteractions();
+            loadPlaceholderPortrait();
+        });
+
+        function buildOptionsUI() {
+            sliceOptions.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = `preset-btn ${idx === 0 ? 'active' : ''}`;
+                btn.innerText = opt.name;
+                btn.onclick = () => applyOption(opt, btn);
+                presetsTray.appendChild(btn);
+            });
+        }
+
+        function applyOption(opt, element) {
+            document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+            element.classList.add('active');
+
+            inputSliceCount.value = opt.slices;
+            inputStagger.value = opt.stagger;
+            inputWidth.value = opt.width;
+            inputGap.value = opt.gap;
+            inputAngle.value = opt.angle;
+            activePattern = opt.pattern;
+
+            updateLabels();
+            renderEffect();
+        }
+
+        function setupInteractions() {
+            const controls = [inputSliceCount, inputStagger, inputWidth, inputGap, inputAngle, inputColorLight, inputColorDark];
+            controls.forEach(ctrl => {
+                ctrl.addEventListener('input', () => {
+                    if(ctrl !== inputColorLight && ctrl !== inputColorDark) {
+                        document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+                    }
+                    updateLabels();
+                    renderEffect();
+                });
+            });
+
+            document.getElementById('btnUpload').addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const r = new FileReader();
+                r.onload = (ev) => {
+                    sourceImage = new Image();
+                    sourceImage.onload = renderEffect;
+                    sourceImage.src = ev.target.result;
+                };
+                r.readAsDataURL(file);
+            });
+            document.getElementById('btnSave').addEventListener('click', saveCanvasToOutput);
+        }
+
+        function updateLabels() {
+            document.getElementById('val-slices').innerText = inputSliceCount.value;
+            document.getElementById('val-stagger').innerText = inputStagger.value;
+            document.getElementById('val-width').innerText = inputWidth.value;
+            document.getElementById('val-gap').innerText = inputGap.value;
+            document.getElementById('val-angle').innerText = inputAngle.value + '°';
+        }
+
+        function renderEffect() {
+            if (!sourceImage.complete) return;
+
+            const size = 1080; 
+            canvas.width = size;
+            canvas.height = size;
+
+            const sliceCount = parseInt(inputSliceCount.value);
+            const staggerAmt = parseInt(inputStagger.value);
+            const sliceWidth = parseInt(inputWidth.value);
+            const gap = parseInt(inputGap.value);
+            const radAngle = parseInt(inputAngle.value) * Math.PI / 180;
+
+            // 1. Render Mathematically Perfect 50/50 Diagonal Split Background
+            ctx.fillStyle = inputColorLight.value;
+            ctx.fillRect(0, 0, size, size);
+
+            ctx.fillStyle = inputColorDark.value;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);          // Top-Left Corner
+            ctx.lineTo(size, size);    // Bottom-Right Corner
+            ctx.lineTo(size, 0);       // Top-Right Corner
+            ctx.closePath();
+            
+            const bgGrad = ctx.createLinearGradient(size, 0, 0, size);
+            bgGrad.addColorStop(0, '#16161a');
+            bgGrad.addColorStop(1, inputColorDark.value);
+            ctx.fillStyle = bgGrad;
+            ctx.fill();
+
+            const cx = size / 2;
+            const cy = size / 2;
+
+            const totalWidth = (sliceCount * sliceWidth) + ((sliceCount - 1) * gap);
+            const startX = -totalWidth / 2;
+
+            // 2. Global Safety Padding Isolation Mask (20px from all sides)
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(20, 20, size - 40, size - 40);
+            ctx.clip();
+
+            // Two-Pass Core Rendering Loop (Pass 0: DropShadows, Pass 1: Masked Content)
+            for (let pass = 0; pass < 2; pass++) {
+                for (let i = 0; i < sliceCount; i++) {
+                    ctx.save();
+                    ctx.translate(cx, cy);
+                    ctx.rotate(radAngle);
+
+                    const x = startX + (i * (sliceWidth + gap));
+                    const patternOffset = activePattern[i % activePattern.length] || 0;
+                    const y = patternOffset * staggerAmt;
+                    const bHeight = size * 2; // Extra safe boundary extension
+
+                    if (pass === 0) {
+                        ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
+                        ctx.shadowBlur = 32;
+                        ctx.shadowOffsetX = 18;
+                        ctx.shadowOffsetY = 14;
+                        ctx.fillStyle = '#000000';
+                        ctx.fillRect(x, y - bHeight/2, sliceWidth, bHeight);
+                    } else {
+                        ctx.beginPath();
+                        ctx.rect(x, y - bHeight/2, sliceWidth, bHeight);
+                        ctx.clip();
+
+                        ctx.rotate(-radAngle);
+                        ctx.translate(-cx, -cy);
+
+                        const scale = Math.max(size / sourceImage.width, size / sourceImage.height);
+                        const iw = sourceImage.width * scale;
+                        const ih = sourceImage.height * scale;
+                        const ix = (size - iw) / 2;
+                        const iy = (size - ih) / 2;
+
+                        ctx.drawImage(sourceImage, ix, iy, iw, ih);
+                    }
+                    ctx.restore();
+                }
+            }
+            ctx.restore(); // Drop the global 20px clipping rect
+        }
+
+        function loadPlaceholderPortrait() {
+            sourceImage.crossOrigin = "anonymous";
+            sourceImage.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='800' viewBox='0 0 800 800'><rect width='100%25' height='100%25' fill='%232c3e50'/><circle cx='400' cy='360' r='160' fill='%23ecf0f1'/><path d='M200 700C200 550 300 500 400 500S600 550 600 700' fill='%23ecf0f1'/></svg>";
+            sourceImage.onload = renderEffect;
+        }
+
+        function saveCanvasToOutput() {
+            try {
+                const dataUrl = canvas.toDataURL('image/png');
+                if (window.AndroidBridge && window.AndroidBridge.saveImage) {
+                    window.AndroidBridge.saveImage(dataUrl);
+                } else {
+                    const link = document.createElement('a');
+                    link.download = 'slice_studio_export.png';
+                    link.href = dataUrl;
+                    link.click();
+                }
+            } catch (err) {
+                alert("Export configuration failure: " + err);
+            }
+        }
+    </script>
+</body>
+</html>

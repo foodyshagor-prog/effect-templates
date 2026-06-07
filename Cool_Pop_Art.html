@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Retro Pop Art Studio</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        html, body {
+            min-height: 100%;
+            min-height: 100dvh;
+            background: linear-gradient(135deg, #0f172a 0%, #020617 100%);
+            color: #f8fafc;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            padding-top: env(safe-area-inset-top, 0px);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+
+        header {
+            padding: 16px;
+            text-align: center;
+            background: rgba(15, 23, 42, 0.6);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        header h1 {
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            background: linear-gradient(90deg, #00f0ff 0%, #ff007f 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .workspace {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            min-height: 320px;
+        }
+
+        .canvas-container {
+            width: 100%;
+            max-width: 480px;
+            height: 360px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            border-radius: 20px;
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        canvas {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            box-shadow: 0 16px 32px rgba(0,0,0,0.5);
+            border-radius: 12px;
+            display: none;
+        }
+
+        .placeholder {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+            cursor: pointer;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .placeholder svg {
+            width: 56px;
+            height: 56px;
+            fill: #ff007f;
+            margin-bottom: 12px;
+            opacity: 0.9;
+        }
+
+        .placeholder p {
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        .controls-panel {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 22px 20px;
+            border-radius: 24px 24px 0 0;
+            margin-top: auto;
+        }
+
+        .slider-group {
+            margin-bottom: 20px;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: #94a3b8;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .slider-label span.val {
+            color: #00f0ff;
+            background: rgba(0, 240, 255, 0.1);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-family: monospace;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            background: #1e293b;
+            border-radius: 4px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: 3px solid #ff007f;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-top: 6px;
+        }
+
+        .btn {
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 0.95rem;
+            height: 50px;
+            border: none;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .btn-upload {
+            background: #1e293b;
+            color: #f8fafc;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .btn-save {
+            background: linear-gradient(135deg, #ff007f 0%, #7000ff 100%);
+            color: #ffffff;
+            box-shadow: 0 4px 14px rgba(255, 0, 127, 0.25);
+        }
+
+        .btn:active, .placeholder:active {
+            opacity: 0.85;
+            transform: scale(0.98);
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        .loader {
+            display: none;
+            position: absolute;
+            background: rgba(2, 6, 23, 0.82);
+            top: 0; left: 0; right: 0; bottom: 0;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+        .spinner {
+            width: 36px;
+            height: 36px;
+            border: 4px solid rgba(255, 0, 127, 0.2);
+            border-top-color: #ff007f;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Retro Pop Art Studio</h1>
+    </header>
+
+    <div class="workspace">
+        <div class="canvas-container" id="drop-zone">
+            <div class="placeholder" id="placeholder">
+                <svg viewBox="0 0 24 24"><path d="M12 2c5.52 0 10 4.48 10 10s-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2zm1 5h-2v4H7v2h4v4h2v-4h4v-2h-4V7z"/></svg>
+                <p>Tap anywhere to import photo</p>
+            </div>
+            <canvas id="editorCanvas"></canvas>
+            <div class="loader" id="loader"><div class="spinner"></div></div>
+        </div>
+    </div>
+
+    <div class="controls-panel">
+        <div class="slider-group">
+            <div class="slider-label">
+                <span>Ink Outline Thickness</span>
+                <span class="val" id="val-ink">Bold</span>
+            </div>
+            <input type="range" id="slider-ink" min="15" max="45" value="28" step="1">
+        </div>
+
+        <div class="slider-group">
+            <div class="slider-label">
+                <span>Pop Color Contrast Threshold</span>
+                <span class="val" id="val-thresh">75%</span>
+            </div>
+            <input type="range" id="slider-thresh" min="40" max="95" value="75" step="1">
+        </div>
+
+        <div class="action-buttons">
+            <button class="btn btn-upload" id="btn-upload">New Photo</button>
+            <button class="btn btn-save" id="btn-save">Save Pop Art</button>
+        </div>
+    </div>
+
+    <input type="file" id="file-input" accept="image/*">
+
+    <script>
+        const canvas = document.getElementById('editorCanvas');
+        const ctx = canvas.getContext('2d');
+        const fileInput = document.getElementById('file-input');
+        const placeholder = document.getElementById('placeholder');
+        const dropZone = document.getElementById('drop-zone');
+        const loader = document.getElementById('loader');
+        const btnUpload = document.getElementById('btn-upload');
+        const btnSave = document.getElementById('btn-save');
+
+        const sliderInk = document.getElementById('slider-ink');
+        const sliderThresh = document.getElementById('slider-thresh');
+        const valInk = document.getElementById('val-ink');
+        const valThresh = document.getElementById('val-thresh');
+
+        let originalImage = null;
+        let cachedPatternCanvas = null;
+
+        sliderInk.addEventListener('input', (e) => { 
+            let v = parseInt(e.target.value);
+            valInk.innerText = v < 22 ? 'Light' : v < 35 ? 'Bold' : 'Heavy Heavy';
+        });
+        sliderThresh.addEventListener('input', (e) => { valThresh.innerText = e.target.value + '%'; });
+
+        sliderInk.addEventListener('change', generatePopArtFX);
+        sliderThresh.addEventListener('change', generatePopArtFX);
+
+        const triggerUpload = () => fileInput.click();
+        btnUpload.addEventListener('click', triggerUpload);
+        dropZone.addEventListener('click', () => { if(!originalImage) triggerUpload(); });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            loader.style.display = 'flex';
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                originalImage = new Image();
+                originalImage.onload = () => {
+                    placeholder.style.display = 'none';
+                    canvas.style.display = 'block';
+                    setupCanvasDimensions();
+                    precalculateGeometricPattern();
+                    generatePopArtFX();
+                };
+                originalImage.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        function setupCanvasDimensions() {
+            const maxDimension = 650;
+            let width = originalImage.width;
+            let height = originalImage.height;
+
+            if (width > height && width > maxDimension) {
+                height = Math.round((height * maxDimension) / width);
+                width = maxDimension;
+            } else if (height > maxDimension) {
+                width = Math.round((width * maxDimension) / height);
+                height = maxDimension;
+            }
+            canvas.width = width;
+            canvas.height = height;
+        }
+
+        // Procedurally generates interlocking diamond/polygonal pop color plates
+        function precalculateGeometricPattern() {
+            cachedPatternCanvas = document.createElement('canvas');
+            cachedPatternCanvas.width = canvas.width;
+            cachedPatternCanvas.height = canvas.height;
+            const pCtx = cachedPatternCanvas.getContext('2d');
+            
+            const tileSize = 45; 
+            const popColors = ['#ff0055', '#00e5ff', '#ffea00', '#7000ff', '#00ff66', '#ff6d00', '#ff00aa', '#003bfb'];
+            
+            for (let y = 0; y < canvas.height + tileSize; y += tileSize) {
+                for (let x = 0; x < canvas.width + tileSize; x += tileSize) {
+                    // Right facing triangular facets
+                    pCtx.fillStyle = popColors[Math.floor(Math.random() * popColors.length)];
+                    pCtx.beginPath();
+                    pCtx.moveTo(x, y);
+                    pCtx.lineTo(x + tileSize, y + tileSize / 2);
+                    pCtx.lineTo(x, y + tileSize);
+                    pCtx.closePath();
+                    pCtx.fill();
+
+                    // Left facing triangular facets
+                    pCtx.fillStyle = popColors[Math.floor(Math.random() * popColors.length)];
+                    pCtx.beginPath();
+                    pCtx.moveTo(x + tileSize, y);
+                    pCtx.lineTo(x, y + tileSize / 2);
+                    pCtx.lineTo(x + tileSize, y + tileSize);
+                    pCtx.closePath();
+                    pCtx.fill();
+                }
+            }
+        }
+
+        function generatePopArtFX() {
+            if (!originalImage || !cachedPatternCanvas) return;
+            loader.style.display = 'flex';
+
+            requestAnimationFrame(() => {
+                setTimeout(() => {
+                    // Draw clean starting frame
+                    ctx.drawImage(originalImage, 0, 0, canvas.width, canvas.height);
+                    
+                    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const pCtx = cachedPatternCanvas.getContext('2d');
+                    const patData = pCtx.getImageData(0, 0, canvas.width, canvas.height);
+
+                    const inkSensitivity = parseInt(sliderInk.value);
+                    const brightnessCutoff = (parseInt(sliderThresh.value) / 100) * 255;
+
+                    renderPopArtLogic(imgData, patData, inkSensitivity, brightnessCutoff);
+
+                    ctx.putImageData(imgData, 0, 0);
+                    loader.style.display = 'none';
+                }, 40);
+            });
+        }
+
+        // Advanced threshold and comic boundary processing matrix
+        function renderPopArtLogic(targetData, patternData, inkSensitivity, cutoff) {
+            const width = targetData.width;
+            const height = targetData.height;
+            const pix = targetData.data;
+            const patPix = patternData.data;
+
+            // Snapshot cache for spatial neighborhood processing
+            const originalSnapshot = new Uint8ClampedArray(pix);
+
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    const idx = (y * width + x) * 4;
+
+                    const r = originalSnapshot[idx];
+                    const g = originalSnapshot[idx + 1];
+                    const b = originalSnapshot[idx + 2];
+                    
+                    // Native grayscale luminosity computation
+                    const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+
+                    // 1. Comic Outline Edge Verification (Look-ahead pixel delta matching)
+                    let isContourEdge = false;
+                    if (x < width - 2 && y < height - 2) {
+                        const rightIdx = (y * width + (x + 2)) * 4;
+                        const downIdx = ((y + 2) * width + x) * 4;
+
+                        const rightLuma = (originalSnapshot[rightIdx] + originalSnapshot[rightIdx + 1] + originalSnapshot[rightIdx + 2]) / 3;
+                        const downLuma = (originalSnapshot[downIdx] + originalSnapshot[downIdx + 1] + originalSnapshot[downIdx + 2]) / 3;
+
+                        if (Math.abs(luminance - rightLuma) > inkSensitivity || Math.abs(luminance - downLuma) > inkSensitivity) {
+                            isContourEdge = true;
+                        }
+                    }
+
+                    // 2. Composite Multiplex Routing Rules
+                    if (isContourEdge) {
+                        // Sharp comic book black lines
+                        pix[idx]     = 20;
+                        pix[idx + 1] = 20;
+                        pix[idx + 2] = 25;
+                    } else if (luminance > cutoff) {
+                        // Isolate background areas into a clean retro-pop white canvas frame
+                        pix[idx]     = 255;
+                        pix[idx + 1] = 255;
+                        pix[idx + 2] = 255;
+                    } else {
+                        // Subject shape zone: Inject procedural multi-color polygon matrices mapped to the structure's depth
+                        const pr = patPix[idx];
+                        const pg = patPix[idx + 1];
+                        const pb = patPix[idx + 2];
+
+                        // Quantize local shadow mapping factor to retain original texture layout definition safely
+                        const shadowFactor = Math.floor((luminance / 255) * 3) / 3;
+
+                        pix[idx]     = Math.min(255, pr * (0.5 + shadowFactor * 0.5));
+                        pix[idx + 1] = Math.min(255, pg * (0.5 + shadowFactor * 0.5));
+                        pix[idx + 2] = Math.min(255, pb * (0.5 + shadowFactor * 0.5));
+                    }
+                }
+            }
+        }
+
+        btnSave.addEventListener('click', () => {
+            if (!originalImage) return;
+            const dataUrl = canvas.toToDataURL ? canvas.toDataURL('image/jpeg', 0.95) : canvas.toDataURL();
+            const link = document.createElement('a');
+            link.download = 'retro_pop_artwork.jpg';
+            link.href = dataUrl;
+            link.click();
+        });
+    </script>
+</body>
+</html>

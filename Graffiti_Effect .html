@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Graffiti Photo Effect</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #020617 0%, #1e1b4b 50%, #312e81 100%);
+            color: #ffffff;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .header {
+            padding: 18px;
+            text-align: center;
+            font-weight: 800;
+            font-size: 20px;
+            letter-spacing: 2px;
+            background: rgba(0, 0, 0, 0.4);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            text-transform: uppercase;
+            text-shadow: 2px 2px 0px #e11d48, -2px -2px 0px #0284c7;
+        }
+
+        .canvas-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            position: relative;
+            overflow: hidden;
+            background: radial-gradient(circle at center, rgba(255,255,255,0.05) 0%, transparent 70%);
+        }
+
+        canvas {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 8px;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255,255,255,0.1);
+            background-color: #111;
+            display: none;
+        }
+
+        .empty-state {
+            position: absolute;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.4);
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .empty-state svg {
+            width: 50px;
+            height: 50px;
+            opacity: 0.5;
+        }
+
+        .toolbar {
+            height: 95px;
+            background: rgba(2, 6, 23, 0.9);
+            backdrop-filter: blur(20px);
+            display: flex;
+            justify-content: space-evenly;
+            align-items: center;
+            padding: 0 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: env(safe-area-inset-bottom, 10px);
+        }
+
+        .btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            font-size: 12px;
+            font-weight: 600;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn .icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 22px;
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1);
+            transition: all 0.2s;
+        }
+
+        .btn:active {
+            transform: scale(0.9);
+        }
+
+        .btn.primary {
+            color: #fff;
+        }
+
+        .btn.primary .icon {
+            background: linear-gradient(135deg, #2563eb, #4f46e5);
+            box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4);
+        }
+
+        .btn.accent {
+            color: #fff;
+        }
+
+        .btn.accent .icon {
+            background: linear-gradient(135deg, #e11d48, #db2777);
+            box-shadow: 0 6px 20px rgba(225, 29, 72, 0.4);
+        }
+
+        #fileInput {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">Urban Graffiti</div>
+
+    <div class="canvas-container">
+        <div class="empty-state" id="emptyState">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+            </svg>
+            <span>Select an image to start</span>
+        </div>
+        <canvas id="photoCanvas"></canvas>
+    </div>
+
+    <div class="toolbar">
+        <input type="file" id="fileInput" accept="image/*">
+        
+        <button class="btn primary" id="uploadBtn">
+            <div class="icon">📸</div>
+            <span>Upload</span>
+        </button>
+
+        <button class="btn accent" id="applyEffectBtn">
+            <div class="icon">🎨</div>
+            <span>Street Art</span>
+        </button>
+
+        <button class="btn primary" id="saveBtn">
+            <div class="icon">💾</div>
+            <span>Save</span>
+        </button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('photoCanvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        const fileInput = document.getElementById('fileInput');
+        const emptyState = document.getElementById('emptyState');
+        
+        let originalImage = null;
+
+        // Graffiti Colors Palette
+        const graffitiColors = ['#ff0055', '#00ffd5', '#ffcc00', '#7b00ff', '#ff5e00', '#ffffff', '#000000'];
+
+        // 1. Upload Logic
+        document.getElementById('uploadBtn').addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    // Set canvas resolution to image resolution for high-quality export
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    
+                    // Draw original image initially
+                    ctx.drawImage(img, 0, 0);
+                    originalImage = img;
+                    
+                    canvas.style.display = 'block';
+                    emptyState.style.display = 'none';
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // Procedural Spray Paint Generator
+        function drawSpray(x, y, radius, color, density) {
+            ctx.fillStyle = color;
+            for (let i = 0; i < density; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                // Skew distribution toward center
+                const r = Math.random() * Math.random() * radius;
+                const dotX = x + Math.cos(angle) * r;
+                const dotY = y + Math.sin(angle) * r;
+                const dotSize = Math.random() * (canvas.width * 0.003) + 1;
+                
+                ctx.beginPath();
+                ctx.arc(dotX, dotY, dotSize, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Procedural Paint Drip Generator
+        function drawDrip(x, y, color, length, thickness) {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(x, y, thickness/2, 0, Math.PI, true);
+            ctx.lineTo(x - thickness/4, y + length);
+            ctx.arc(x, y + length, thickness/4, Math.PI, 0, true);
+            ctx.lineTo(x + thickness/2, y);
+            ctx.fill();
+        }
+
+        // 2. Graffiti Effect Logic
+        document.getElementById('applyEffectBtn').addEventListener('click', () => {
+            if (!originalImage) {
+                alert("Please upload an image first!");
+                return;
+            }
+
+            const w = canvas.width;
+            const h = canvas.height;
+            const scale = Math.min(w, h);
+
+            // Step 1: Base Wall Layer (Dark Gray)
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.fillStyle = '#1a1a24';
+            ctx.fillRect(0, 0, w, h);
+
+            // Step 2: High Contrast Grayscale Stencil Layer
+            ctx.globalCompositeOperation = 'luminosity';
+            ctx.filter = 'contrast(300%) grayscale(100%) brightness(90%)';
+            ctx.drawImage(originalImage, 0, 0, w, h);
+
+            // Step 3: Deep Color Burn Overlay (Brings back vibrant, blown-out colors)
+            ctx.globalCompositeOperation = 'color-dodge';
+            ctx.filter = 'saturate(400%) contrast(150%) brightness(120%)';
+            ctx.drawImage(originalImage, 0, 0, w, h);
+
+            // Reset filters
+            ctx.filter = 'none';
+
+            // Step 4: Add Random Large Spray Paint Halos
+            ctx.globalCompositeOperation = 'overlay';
+            for (let i = 0; i < 8; i++) {
+                const cx = Math.random() * w;
+                const cy = Math.random() * h;
+                const r = (Math.random() * 0.4 + 0.2) * scale;
+                const color = graffitiColors[Math.floor(Math.random() * (graffitiColors.length - 2))]; // Ignore b/w for halos
+                
+                const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+                grad.addColorStop(0, color);
+                grad.addColorStop(1, 'rgba(0,0,0,0)');
+                
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, w, h);
+            }
+
+            // Step 5: Procedural Stencil Splatters & Dots
+            ctx.globalCompositeOperation = 'source-over';
+            const splatterCount = 20;
+            for (let i = 0; i < splatterCount; i++) {
+                const sx = Math.random() * w;
+                const sy = Math.random() * h;
+                const radius = Math.random() * (scale * 0.15) + (scale * 0.05);
+                const color = graffitiColors[Math.floor(Math.random() * graffitiColors.length)];
+                drawSpray(sx, sy, radius, color, 400);
+
+                // Add drips from some splatters
+                if (Math.random() > 0.5) {
+                    const dripLength = Math.random() * (scale * 0.2) + (scale * 0.05);
+                    const dripThickness = Math.random() * (scale * 0.015) + (scale * 0.005);
+                    drawDrip(sx, sy, color, dripLength, dripThickness);
+                }
+            }
+
+            // Step 6: Edge Vignette to focus the center
+            ctx.globalCompositeOperation = 'multiply';
+            const vignette = ctx.createRadialGradient(w/2, h/2, scale * 0.4, w/2, h/2, scale * 0.8);
+            vignette.addColorStop(0, 'rgba(255,255,255,1)');
+            vignette.addColorStop(1, 'rgba(80,80,80,1)');
+            ctx.fillStyle = vignette;
+            ctx.fillRect(0, 0, w, h);
+
+            // Step 7: Final crisping layer
+            ctx.globalCompositeOperation = 'overlay';
+            ctx.globalAlpha = 0.3;
+            ctx.drawImage(originalImage, 0, 0, w, h);
+            ctx.globalAlpha = 1.0;
+            ctx.globalCompositeOperation = 'source-over';
+        });
+
+        // 3. Save Logic
+        document.getElementById('saveBtn').addEventListener('click', () => {
+            if (!originalImage) {
+                alert("Please upload an image first!");
+                return;
+            }
+            // Generate full-resolution Data URL
+            const dataURL = canvas.toDataURL('image/jpeg', 0.95);
+            
+            // Trigger download mechanism
+            const link = document.createElement('a');
+            link.download = 'graffiti_art_' + Date.now() + '.jpg';
+            link.href = dataURL;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+    </script>
+</body>
+</html>

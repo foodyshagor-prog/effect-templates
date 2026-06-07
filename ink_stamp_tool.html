@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shagor Premium Ink Stamp Studio</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #0b0c10;
+            color: #f3f4f6;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 500px;
+            padding: 24px;
+            background: #14161f;
+            border-radius: 28px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.7);
+            border: 1px solid #232736;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            background: linear-gradient(45deg, #1e293b, #475569, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .canvas-container {
+            width: 100%;
+            margin-bottom: 22px;
+            background: #1b1e2b;
+            border-radius: 20px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 280px;
+            border: 1px dashed #343a50;
+        }
+
+        canvas {
+            max-width: 100%;
+            max-height: 50vh;
+            display: block;
+            border-radius: 12px;
+            box-shadow: 0 12px 36px rgba(0,0,0,0.6);
+        }
+
+        /* 🗂️ কন্ট্রোল স্লাইডার প্যানেল */
+        .control-panel {
+            background: #1b1e2b;
+            padding: 18px;
+            border-radius: 18px;
+            border: 1px solid #262c3f;
+            margin-bottom: 22px;
+            text-align: left;
+        }
+
+        .slider-group {
+            margin-bottom: 16px;
+        }
+
+        .slider-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: #9ca3af;
+            margin-bottom: 8px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .slider-label span {
+            color: #a5b4fc;
+            background: #282f48;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 5px;
+            background: #2e354f;
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #a5b4fc;
+            cursor: pointer;
+            box-shadow: 0 0 12px rgba(165,180,252,0.4);
+            transition: transform 0.1s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:active {
+            transform: scale(1.25);
+        }
+
+        input[type="range"]:disabled::-webkit-slider-thumb {
+            background: #4b5563;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        /* 🔘 বাটন হ্যান্ডলার */
+        .btn-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .upload-btn, .save-btn {
+            padding: 15px 24px;
+            font-size: 16px;
+            font-weight: 700;
+            border-radius: 35px;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .upload-btn {
+            border: 1px solid #2e354f;
+            background: #1f2437;
+            color: #fff;
+        }
+
+        .save-btn {
+            background: #a5b4fc;
+            color: #0b0c10;
+            box-shadow: 0 4px 20px rgba(165, 180, 252, 0.3);
+        }
+
+        .save-btn:disabled {
+            background: #222635 !important;
+            color: #525975 !important;
+            box-shadow: none !important;
+            cursor: not-allowed;
+        }
+
+        .loader {
+            visibility: hidden;
+            color: #9ca3af;
+            font-size: 13px;
+            margin-top: 6px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Ink Stamp Studio</h2>
+    
+    <div class="canvas-container">
+        <canvas id="photoCanvas"></canvas>
+    </div>
+
+    <div class="control-panel">
+        <div class="slider-group">
+            <div class="slider-label">
+                <label for="densitySlider">Ink Density (Threshold)</label>
+                <span id="densityVal">125</span>
+            </div>
+            <input type="range" id="densitySlider" min="40" max="210" value="125" oninput="onSliderModify()" disabled>
+        </div>
+
+        <div class="slider-group">
+            <div class="slider-label">
+                <label for="roughnessSlider">Stamp Edge Roughness</label>
+                <span id="roughnessVal">35</span>
+            </div>
+            <input type="range" id="roughnessSlider" min="5" max="80" value="35" oninput="onSliderModify()" disabled>
+        </div>
+    </div>
+
+    <div class="btn-wrapper">
+        <label class="upload-btn">
+            <input type="file" id="imageLoader" accept="image/*"/>
+            Upload Base Line/Photo
+        </label>
+        <button id="saveBtn" class="save-btn" onclick="saveStampArt()" disabled>Download Stamp Art</button>
+        <div id="loadingText" class="loader">Pressing ink stamp...</div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('photoCanvas');
+    const ctx = canvas.getContext('2d');
+    const imageLoader = document.getElementById('imageLoader');
+    const densitySlider = document.getElementById('densitySlider');
+    const roughnessSlider = document.getElementById('roughnessSlider');
+    const saveBtn = document.getElementById('saveBtn');
+    const loadingText = document.getElementById('loadingText');
+    
+    let originalImage = new Image();
+    let renderTimeout = null;
+
+    imageLoader.addEventListener('change', handleImage, false);
+
+    function handleImage(e) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            originalImage.onload = function() {
+                let targetWidth = originalImage.width;
+                let targetHeight = originalImage.height;
+                const maxDimension = 650;
+
+                // অ্যাসপেক্ট রেশিও ঠিক রেখে রিসাইজ
+                if (targetWidth > maxDimension || targetHeight > maxDimension) {
+                    if (targetWidth > targetHeight) {
+                        targetHeight = Math.round((targetHeight * maxDimension) / targetWidth);
+                        targetWidth = maxDimension;
+                    } else {
+                        targetWidth = Math.round((targetWidth * maxDimension) / targetHeight);
+                    }
+                }
+
+                canvas.width = targetWidth;
+                canvas.height = targetHeight;
+                
+                densitySlider.disabled = false;
+                roughnessSlider.disabled = false;
+                saveBtn.disabled = false; 
+                
+                applyInkStampFX();
+            }
+            originalImage.src = event.target.result;
+        }
+        if(e.target.files[0]) {
+            reader.readAsDataURL(e.target.files[0]);
+        }
+    }
+
+    function onSliderModify() {
+        document.getElementById('densityVal').innerText = densitySlider.value;
+        document.getElementById('roughnessVal').innerText = roughnessSlider.value;
+        
+        if (!originalImage.src) return;
+        loadingText.style.visibility = 'visible';
+        saveBtn.disabled = true;
+
+        clearTimeout(renderTimeout);
+        renderTimeout = setTimeout(() => {
+            applyInkStampFX();
+        }, 50);
+    }
+
+    // 🚀 মূল স্ট্যাম্প ইফেক্ট ইঞ্জিন পাইপলাইন
+    function applyInkStampFX() {
+        if (!originalImage.src) return;
+
+        const width = canvas.width;
+        const height = canvas.height;
+
+        // ১. প্রাইমারি ইমেজ ড্রয়িং
+        ctx.drawImage(originalImage, 0, 0, width, height);
+        
+        const srcData = ctx.getImageData(0, 0, width, height);
+        const dstData = ctx.createImageData(width, height);
+        
+        const s = srcData.data;
+        const d = dstData.data;
+
+        const density = parseInt(densitySlider.value);
+        const roughness = parseInt(roughnessSlider.value);
+
+        // ২. পিক্সেল প্রসেসিং লুপ (স্ট্যাম্পের খাঁজ এবং কালির ব্লিডিং অ্যানিমেশন)
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                const idx = (y * width + x) * 4;
+                
+                const r = s[idx], g = s[idx+1], b = s[idx+2];
+                // স্ট্যান্ডার্ড লুমিনেন্স ফর্মুলা
+                let lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+
+                // 🪵 ১. রাফ এজ বা জিলিপির মতো আঁকাবাঁকা বর্ডারের জন্য পার্লিন-স্টাইল সিমুলেটেড নয়েজ
+                // এটি বর্ডারের কাছের পিক্সেলগুলোকে র্যান্ডমাইজড করে টেক্সচার ফুটিয়ে তোলে
+                let edgeNoise = (Math.sin(x * 0.15) * Math.cos(y * 0.15) * (roughness * 0.4)) + 
+                                ((Math.random() - 0.5) * roughness * 0.6);
+
+                // 🧽 ২. কালির অভ্যন্তরীণ শূন্যতা (Incomplete transfer texture)
+                // স্ট্যাম্পের ডার্ক এরিয়ার ভেতরে সূক্ষ্ম লাইট স্পট তৈরি করে
+                let internalNoise = 0;
+                if (lum < density && Math.random() > 0.975) {
+                    internalNoise = roughness * 1.5; 
+                }
+
+                // 💧 ৩. কালির স্প্ল্যাটার বা ছিটা দাগ (Splatters outside limits)
+                let externalNoise = 0;
+                if (lum >= density && Math.random() > 0.994) {
+                    externalNoise = -roughness * 1.2;
+                }
+
+                let finalLum = lum + edgeNoise + internalNoise + externalNoise;
+
+                // সিগময়েড ইকুয়েশন দিয়ে কালির ব্লিডিং এজ বা ছড়িয়ে যাওয়া লুক কন্ট্রোল
+                let diff = finalLum - density;
+                let factor = 1 / (1 + Math.exp(-0.2 * diff)); 
+
+                // 🎨 রেফারেন্স ছবির মতো খাঁটি চারকোল ব্ল্যাক স্ট্যাম্প ইনক (#1C1E24) এবং ওল্ড পেপার টেক্সচার বেস (#EFECE6)
+                const inkR = 28,   inkG = 30,   inkB = 36;
+                const paperR = 239, paperG = 236, paperB = 230;
+
+                d[idx]     = Math.floor(inkR + (paperR - inkR) * factor);     // R
+                d[idx + 1] = Math.floor(inkG + (paperG - inkG) * factor);     // G
+                d[idx + 2] = Math.floor(inkB + (paperB - inkB) * factor);     // B
+                d[idx + 3] = 255;                                             // Alpha
+            }
+        }
+        ctx.putImageData(dstData, 0, 0);
+
+        // ৩. ফাইনাল ভিনটেজ পেপার ব্যাকগ্রাউন্ড ও ডাবলিং কম্বিনেশন ওভারলে
+        ctx.globalCompositeOperation = 'multiply';
+        ctx.fillStyle = "rgba(235, 230, 222, 0.2)";
+        ctx.fillRect(0, 0, width, height);
+        ctx.globalCompositeOperation = 'source-over';
+
+        loadingText.style.visibility = 'hidden';
+        saveBtn.disabled = false;
+    }
+
+    function saveStampArt() {
+        if (!originalImage.src) return;
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.95);
+
+        const downloadLink = document.createElement('a');
+        downloadLink.download = 'shagor_ink_stamp_' + Date.now() + '.jpg';
+        downloadLink.href = dataUrl;
+        downloadLink.click();
+
+        if (window.AndroidInterface && window.AndroidInterface.saveToGallery) {
+            window.AndroidInterface.saveToGallery(dataUrl);
+        }
+    }
+</script>
+
+</body>
+</html>s

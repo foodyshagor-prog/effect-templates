@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mirror Portrait Studio - Multi-Pane Reflection Generator</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        html, body {
+            min-height: 100%;
+            background: #0a0e17;
+            color: #f8fafc;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            overflow-y: auto;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            padding: 20px 16px;
+            text-align: center;
+            background: rgba(10, 14, 23, 0.95);
+            border-bottom: 1px solid rgba(244, 63, 94, 0.15);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        header h1 {
+            font-size: 1.1rem;
+            font-weight: 900;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #f43f5e;
+            text-shadow: 0 0 12px rgba(244, 63, 94, 0.3);
+        }
+
+        header span {
+            display: block;
+            font-size: 0.7rem;
+            color: #94a3b8;
+            letter-spacing: 1px;
+            margin-top: 4px;
+            text-transform: uppercase;
+        }
+
+        .workspace {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            min-height: 380px;
+        }
+
+        .canvas-container {
+            width: 100%;
+            max-width: 540px;
+            height: 460px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            border-radius: 24px;
+            overflow: hidden;
+            background: #040711;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            box-shadow: 0 30px 60px -15px rgba(0,0,0,0.8);
+        }
+
+        canvas {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            display: none;
+        }
+
+        .placeholder {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            padding: 30px;
+            text-align: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        .placeholder .icon-glow {
+            width: 72px;
+            height: 72px;
+            background: rgba(244, 63, 94, 0.03);
+            border: 1px solid rgba(244, 63, 94, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+            box-shadow: 0 0 20px rgba(244, 63, 94, 0.05);
+        }
+
+        .placeholder svg {
+            width: 32px;
+            height: 32px;
+            fill: #f43f5e;
+        }
+
+        .placeholder p {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #e2e8f0;
+            margin-bottom: 4px;
+        }
+
+        .placeholder span {
+            font-size: 0.75rem;
+            color: #475569;
+        }
+
+        .controls-panel {
+            background: #0f172a;
+            border-top: 1px solid rgba(244, 63, 94, 0.2);
+            padding: 24px;
+            border-radius: 28px 28px 0 0;
+            box-shadow: 0 -15px 35px rgba(0,0,0,0.6);
+            max-width: 600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .control-row {
+            margin-bottom: 18px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: #94a3b8;
+            margin-bottom: 8px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .control-header span.val {
+            background: rgba(244, 63, 94, 0.1);
+            color: #fda4af;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-family: monospace;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: #334155;
+            border-radius: 2px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #f43f5e;
+            box-shadow: 0 0 10px rgba(244, 63, 94, 0.5);
+            cursor: pointer;
+            border: 2px solid #ffffff;
+        }
+
+        .toggle-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 4px;
+        }
+
+        .toggle-btn {
+            background: #1e293b;
+            border: 1px solid rgba(255,255,255,0.05);
+            color: #94a3b8;
+            padding: 10px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            border-radius: 10px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.2s ease;
+        }
+
+        .toggle-btn.active {
+            background: rgba(244, 63, 94, 0.15);
+            border-color: #f43f5e;
+            color: #fff;
+        }
+
+        .action-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 14px;
+            margin-top: 24px;
+        }
+
+        .btn {
+            font-family: inherit;
+            font-weight: 700;
+            font-size: 0.85rem;
+            height: 48px;
+            border: none;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-upload {
+            background: #1e293b;
+            color: #cbd5e1;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .btn-save {
+            background: #f43f5e;
+            color: #ffffff;
+            box-shadow: 0 4px 20px rgba(244, 63, 94, 0.25);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        #file-input {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Mirror Portrait Studio</h1>
+        <span>Slicing & Displacement Fragment Art Generator</span>
+    </header>
+
+    <div class="workspace">
+        <div class="canvas-container" id="drop-zone">
+            <div class="placeholder" id="placeholder">
+                <div class="icon-glow">
+                    <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5.04-6.71l-2.75 3.54-1.96-2.36L6.5 17h11l-3.54-4.71z"/></svg>
+                </div>
+                <p>Select or Drop Portrait Image</p>
+                <span>Works best with high-contrast, centered studio face portraits</span>
+            </div>
+            <canvas id="mainCanvas"></canvas>
+        </div>
+    </div>
+
+    <div class="controls-panel">
+        <div class="control-row">
+            <div class="control-header">
+                <span>Mirror Pane Slices</span>
+                <span class="val" id="val-slices">5 Panels</span>
+            </div>
+            <input type="range" id="slider-slices" min="3" max="9" value="5" step="2">
+        </div>
+
+        <div class="control-row">
+            <div class="control-header">
+                <span>Reflection Displacement</span>
+                <span class="val" id="val-shift">40px</span>
+            </div>
+            <input type="range" id="slider-shift" min="10" max="120" value="40" step="5">
+        </div>
+
+        <div class="control-row">
+            <div class="control-header">
+                <span>Inter-Pane Shadow Depth</span>
+                <span class="val" id="val-shadow">75%</span>
+            </div>
+            <input type="range" id="slider-shadow" min="20" max="100" value="75" step="5">
+        </div>
+
+        <div class="control-row">
+            <div class="control-header">
+                <span>Color Profiling Styling</span>
+            </div>
+            <div class="toggle-group">
+                <button class="toggle-btn active" id="btn-bw" onclick="setColorMode('bw')">Cinematic B&W</button>
+                <button class="toggle-btn" id="btn-color" onclick="setColorMode('color')">Original Color</button>
+            </div>
+        </div>
+
+        <div class="action-grid">
+            <button class="btn btn-upload" id="btn-upload">Load Photo</button>
+            <button class="btn btn-save" id="btn-save">Export Artwork</button>
+        </div>
+    </div>
+
+    <input type="file" id="file-input" accept="image/*">
+
+    <script>
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d');
+        const fileInput = document.getElementById('file-input');
+        const placeholder = document.getElementById('placeholder');
+        const dropZone = document.getElementById('drop-zone');
+        const btnUpload = document.getElementById('btn-upload');
+        const btnSave = document.getElementById('btn-save');
+
+        const sliderSlices = document.getElementById('slider-slices');
+        const sliderShift = document.getElementById('slider-shift');
+        const sliderShadow = document.getElementById('slider-shadow');
+
+        const valSlices = document.getElementById('val-slices');
+        const valShift = document.getElementById('val-shift');
+        const valShadow = document.getElementById('val-shadow');
+
+        let srcImage = null;
+        let styleMode = 'bw'; // 'bw' or 'color'
+
+        // UI Listeners
+        sliderSlices.addEventListener('input', (e) => { valSlices.innerText = e.target.value + ' Panels'; renderMirrorPipeline(); });
+        sliderShift.addEventListener('input', (e) => { valShift.innerText = e.target.value + 'px'; renderMirrorPipeline(); });
+        sliderShadow.addEventListener('input', (e) => { valShadow.innerText = e.target.value + '%'; renderMirrorPipeline(); });
+
+        btnUpload.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('click', () => { if(!srcImage) fileInput.click(); });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            loadImage(file);
+        });
+
+        // Drag & Drop Setup
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.style.borderColor = '#f43f5e'; });
+        dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor = 'transparent'; });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = 'transparent';
+            if(e.dataTransfer.files.length > 0) loadImage(e.dataTransfer.files[0]);
+        });
+
+        function loadImage(file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                srcImage = new Image();
+                srcImage.onload = () => {
+                    placeholder.style.display = 'none';
+                    canvas.style.display = 'block';
+                    setupCanvasDimensions();
+                    renderMirrorPipeline();
+                };
+                srcImage.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function setupCanvasDimensions() {
+            const maxDim = 1000;
+            let w = srcImage.width;
+            let h = srcImage.height;
+
+            if (w > h && w > maxDim) {
+                h = Math.round((h * maxDim) / w);
+                w = maxDim;
+            } else if (h > maxDim) {
+                w = Math.round((w * maxDim) / h);
+                h = maxDim;
+            }
+
+            canvas.width = w;
+            canvas.height = h;
+        }
+
+        function setColorMode(mode) {
+            styleMode = mode;
+            document.getElementById('btn-bw').classList.toggle('active', mode === 'bw');
+            document.getElementById('btn-color').classList.toggle('active', mode === 'color');
+            renderMirrorPipeline();
+        }
+
+        function renderMirrorPipeline() {
+            if (!srcImage) return;
+
+            const w = canvas.width;
+            const h = canvas.height;
+            const paneCount = parseInt(sliderSlices.value);
+            const shiftAmount = parseInt(sliderShift.value);
+            const shadowIntensity = parseInt(sliderShadow.value) / 100;
+
+            ctx.clearRect(0, 0, w, h);
+
+            // Generate an intermediate clean styled base source layer buffer
+            const baseBuffer = document.createElement('canvas');
+            baseBuffer.width = w;
+            baseBuffer.height = h;
+            const bCtx = baseBuffer.getContext('2d');
+
+            bCtx.save();
+            if (styleMode === 'bw') {
+                // Emulate dramatic moody cinematic contrast grading
+                bCtx.filter = 'grayscale(1) contrast(1.35) brightness(0.95)';
+            } else {
+                bCtx.filter = 'contrast(1.15) brightness(0.95)';
+            }
+            bCtx.drawImage(srcImage, 0, 0, w, h);
+            bCtx.restore();
+
+            const paneWidth = w / paneCount;
+            const middleIndex = Math.floor(paneCount / 2);
+
+            // Draw multi-layered fragmented shards
+            for (let i = 0; i < paneCount; i++) {
+                ctx.save();
+
+                // Compute pane viewport boundaries
+                const startX = i * paneWidth;
+
+                // Create precision geometric path for vertical mirror column masking
+                ctx.beginPath();
+                ctx.rect(startX, 0, paneWidth, h);
+                ctx.clip();
+
+                // Determine progressive mirror index distance step from center pane
+                const distanceFromCenter = i - middleIndex;
+                
+                // Stagger shifts across panels symmetrically to get the offset refraction gaze look
+                let visualOffset = distanceFromCenter * shiftAmount;
+
+                // Render mirror contents with custom source slice mappings
+                ctx.drawImage(
+                    baseBuffer, 
+                    0, 0, w, h,
+                    visualOffset, 0, w, h
+                );
+
+                // Add 3D structural glass panel shading highlights and shadows
+                // Left Border Ambient Occlusion
+                let shadowGradLeft = ctx.createLinearGradient(startX, 0, startX + Math.min(45, paneWidth * 0.4), 0);
+                shadowGradLeft.addColorStop(0, `rgba(0, 0, 0, ${0.85 * shadowIntensity})`);
+                shadowGradLeft.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                ctx.fillStyle = shadowGradLeft;
+                ctx.fillRect(startX, 0, paneWidth, h);
+
+                // Right Border Ambient Occlusion
+                let shadowGradRight = ctx.createLinearGradient(startX + paneWidth, 0, startX + paneWidth - Math.min(45, paneWidth * 0.4), 0);
+                shadowGradRight.addColorStop(0, `rgba(0, 0, 0, ${0.85 * shadowIntensity})`);
+                shadowGradRight.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                ctx.fillStyle = shadowGradRight;
+                ctx.fillRect(startX, 0, paneWidth, h);
+
+                // Subtle high-end reflection rim light overlay along glass pane edge joints
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(startX, -5, paneWidth, h + 10);
+
+                ctx.restore();
+            }
+
+            // Overlay atmospheric cinematic geometric lens light leak slices across total bounds
+            ctx.save();
+            let atmosphericFlare = ctx.createLinearGradient(0, 0, w, h);
+            atmosphericFlare.addColorStop(0, 'rgba(255, 255, 255, 0.0)');
+            atmosphericFlare.addColorStop(0.3, 'rgba(255, 255, 255, 0.02)');
+            atmosphericFlare.addColorStop(0.5, 'rgba(255, 255, 255, 0.07)');
+            atmosphericFlare.addColorStop(0.7, 'rgba(255, 255, 255, 0.0)');
+            ctx.fillStyle = atmosphericFlare;
+            ctx.fillRect(0, 0, w, h);
+            ctx.restore();
+        }
+
+        btnSave.addEventListener('click', () => {
+            if (!srcImage) return;
+            const link = document.createElement('a');
+            link.download = 'mirror_portrait_masterpiece.jpg';
+            link.href = canvas.toDataURL('image/jpeg', 0.95);
+            link.click();
+        });
+    </script>
+</body>
+</html>

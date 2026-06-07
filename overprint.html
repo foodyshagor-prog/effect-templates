@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Overprint Effect - Shagor Photo Editor</title>
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #ff416c, #ff4b2b);
+            --bg-gradient: linear-gradient(145deg, #0f172a, #1e293b, #0b1120);
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 500px;
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding-top: 10px;
+        }
+
+        header h2 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        header p {
+            margin: 5px 0 0;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .canvas-wrapper {
+            width: 100%;
+            aspect-ratio: 1 / 1; /* Default square ratio, adjusts to image */
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .controls-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Custom File Upload Button */
+        input[type="file"] {
+            display: none;
+        }
+
+        .upload-btn {
+            display: block;
+            width: 100%;
+            padding: 16px;
+            background: var(--primary-gradient);
+            color: white;
+            text-align: center;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            box-sizing: border-box;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(255, 75, 43, 0.3);
+        }
+
+        .upload-btn:active {
+            transform: scale(0.98);
+        }
+
+        .slider-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .slider-group label {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* Modern Range Slider for Mobile */
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #ff4b2b;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(255, 75, 43, 0.5);
+        }
+
+        .download-btn {
+            width: 100%;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .download-btn:active {
+            background: rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <header>
+            <h2>Shagor Photo Editor</h2>
+            <p>Overprint Effect Studio</p>
+        </header>
+
+        <div class="canvas-wrapper">
+            <!-- Empty state text before image is uploaded -->
+            <span id="placeholderText" style="position: absolute; color: var(--text-muted); font-size: 14px;">No image selected</span>
+            <canvas id="mainCanvas"></canvas>
+        </div>
+
+        <div class="controls-panel">
+            <label class="upload-btn">
+                <input type="file" id="imageUpload" accept="image/*">
+                + Select Photo
+            </label>
+            
+            <div class="slider-group">
+                <label for="offsetSlider">
+                    <span>Offset Amount</span>
+                    <span id="offsetValue">20px</span>
+                </label>
+                <input type="range" id="offsetSlider" min="0" max="100" value="20">
+            </div>
+
+            <button class="download-btn" id="downloadBtn">Save to Device</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d');
+        const offsetSlider = document.getElementById('offsetSlider');
+        const offsetValueText = document.getElementById('offsetValue');
+        const placeholderText = document.getElementById('placeholderText');
+        let originalImage = new Image();
+
+        // Handle Image Upload
+        document.getElementById('imageUpload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                originalImage.onload = function() {
+                    placeholderText.style.display = 'none';
+                    canvas.width = originalImage.width;
+                    canvas.height = originalImage.height;
+                    applyOverprintEffect();
+                }
+                originalImage.src = event.target.result;
+            }
+            reader.readAsDataURL(file);
+        });
+
+        // Update effect when slider moves
+        offsetSlider.addEventListener('input', function() {
+            offsetValueText.innerText = this.value + 'px';
+            requestAnimationFrame(applyOverprintEffect); // Better performance for slider
+        });
+
+        function createInkLayer(img, rIntensity, gIntensity, bIntensity) {
+            const layerCanvas = document.createElement('canvas');
+            layerCanvas.width = img.width; 
+            layerCanvas.height = img.height;
+            const layerCtx = layerCanvas.getContext('2d');
+
+            layerCtx.fillStyle = 'white';
+            layerCtx.fillRect(0, 0, layerCanvas.width, layerCanvas.height);
+            layerCtx.drawImage(img, 0, 0);
+
+            const imgData = layerCtx.getImageData(0, 0, layerCanvas.width, layerCanvas.height);
+            const data = imgData.data;
+
+            for (let i = 0; i < data.length; i += 4) {
+                let r = data[i];
+                let g = data[i+1];
+                let b = data[i+2];
+
+                let gray = (r * 0.3 + g * 0.59 + b * 0.11);
+
+                data[i]   = 255 - ((255 - gray) * rIntensity); 
+                data[i+1] = 255 - ((255 - gray) * gIntensity);
+                data[i+2] = 255 - ((255 - gray) * bIntensity);
+            }
+            layerCtx.putImageData(imgData, 0, 0);
+            return layerCanvas;
+        }
+
+        function applyOverprintEffect() {
+            if (!originalImage.src) return;
+
+            const offset = parseInt(offsetSlider.value);
+
+            // Red & Blue Ink layers
+            const redLayer = createInkLayer(originalImage, 0.9, 0.1, 0.1);
+            const blueLayer = createInkLayer(originalImage, 0.1, 0.3, 0.9);
+
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.globalCompositeOperation = 'multiply';
+
+            ctx.drawImage(redLayer, -offset, 0);
+            ctx.drawImage(blueLayer, offset, 0);
+
+            ctx.globalCompositeOperation = 'source-over';
+        }
+
+        // Handle Image Download
+        document.getElementById('downloadBtn').addEventListener('click', () => {
+            if(canvas.width > 0 && originalImage.src) {
+                const link = document.createElement('a');
+                link.download = 'ShagorEditor_Overprint.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            } else {
+                alert('Please upload a photo first!');
+            }
+        });
+    </script>
+</body>
+</html>

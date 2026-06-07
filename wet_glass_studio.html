@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rain Glass: Wet Window Studio</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        html, body {
+            min-height: 100%;
+            background: #090d16;
+            color: #f1f5f9;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            overflow-y: auto;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            padding: 20px 16px;
+            text-align: center;
+            background: rgba(9, 13, 22, 0.95);
+            border-bottom: 1px solid rgba(14, 165, 233, 0.15);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        header h1 {
+            font-size: 1.1rem;
+            font-weight: 900;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #0ea5e9;
+            text-shadow: 0 0 12px rgba(14, 165, 233, 0.3);
+        }
+
+        header span {
+            display: block;
+            font-size: 0.7rem;
+            color: #94a3b8;
+            letter-spacing: 1px;
+            margin-top: 4px;
+            text-transform: uppercase;
+        }
+
+        .workspace {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            min-height: 380px;
+        }
+
+        .canvas-container {
+            width: 100%;
+            max-width: 540px;
+            height: 440px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            border-radius: 20px;
+            overflow: hidden;
+            background: #030712;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            box-shadow: 0 30px 60px -15px rgba(0,0,0,0.8);
+        }
+
+        canvas {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            display: none;
+        }
+
+        .placeholder {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            padding: 30px;
+            text-align: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        .placeholder .icon-glow {
+            width: 72px;
+            height: 72px;
+            background: rgba(14, 165, 233, 0.03);
+            border: 1px solid rgba(14, 165, 233, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+            box-shadow: 0 0 20px rgba(14, 165, 233, 0.05);
+        }
+
+        .placeholder svg {
+            width: 32px;
+            height: 32px;
+            fill: #0ea5e9;
+        }
+
+        .placeholder p {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #e2e8f0;
+            margin-bottom: 4px;
+        }
+
+        .placeholder span {
+            font-size: 0.75rem;
+            color: #475569;
+        }
+
+        .controls-panel {
+            background: #0f172a;
+            border-top: 1px solid rgba(14, 165, 233, 0.2);
+            padding: 24px;
+            border-radius: 28px 28px 0 0;
+            box-shadow: 0 -15px 35px rgba(0,0,0,0.6);
+            max-width: 600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .control-row {
+            margin-bottom: 18px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: #94a3b8;
+            margin-bottom: 8px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .control-header span.val {
+            background: rgba(14, 165, 233, 0.1);
+            color: #38bdf8;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-family: monospace;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: #334155;
+            border-radius: 2px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #0ea5e9;
+            box-shadow: 0 0 10px rgba(14, 165, 233, 0.5);
+            cursor: pointer;
+            border: 2px solid #ffffff;
+        }
+
+        .action-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 14px;
+            margin-top: 24px;
+        }
+
+        .btn {
+            font-family: inherit;
+            font-weight: 700;
+            font-size: 0.85rem;
+            height: 48px;
+            border: none;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-upload {
+            background: #1e293b;
+            color: #cbd5e1;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .btn-save {
+            background: #0ea5e9;
+            color: #030712;
+            box-shadow: 0 4px 20px rgba(14, 165, 233, 0.25);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        #file-input {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Rain Glass Studio</h1>
+        <span>Condensation & Fluid Droplet Layer Simulation</span>
+    </header>
+
+    <div class="workspace">
+        <div class="canvas-container" id="drop-zone">
+            <div class="placeholder" id="placeholder">
+                <div class="icon-glow">
+                    <svg viewBox="0 0 24 24"><path d="M12 2c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L4.35 18c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0l1.9-1.9C9.22 18.67 10.57 19 12 19c4.97 0 9-4.03 9-9s-4.03-9-9-9zm0 15c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z"/></svg>
+                </div>
+                <p>Select or Drop Source Image</p>
+                <span>Perfect for portrait closeups and cinematic landscapes</span>
+            </div>
+            <canvas id="mainCanvas"></canvas>
+        </div>
+    </div>
+
+    <div class="controls-panel">
+        <div class="control-row">
+            <div class="control-header">
+                <span>Glass Condensation Blur</span>
+                <span class="val" id="val-blur">8px</span>
+            </div>
+            <input type="range" id="slider-blur" min="2" max="20" value="8" step="1">
+        </div>
+
+        <div class="control-row">
+            <div class="control-header">
+                <span>Running Water Streaks</span>
+                <span class="val" id="val-streaks">15</span>
+            </div>
+            <input type="range" id="slider-streaks" min="0" max="40" value="15" step="1">
+        </div>
+
+        <div class="control-row">
+            <div class="control-header">
+                <span>Ambient Raindrops</span>
+                <span class="val" id="val-droplets">120</span>
+            </div>
+            <input type="range" id="slider-droplets" min="20" max="300" value="120" step="10">
+        </div>
+
+        <div class="control-row">
+            <div class="control-header">
+                <span>Droplet Scale</span>
+                <span class="val" id="val-scale">100%</span>
+            </div>
+            <input type="range" id="slider-scale" min="50" max="200" value="100" step="10">
+        </div>
+
+        <div class="action-grid">
+            <button class="btn btn-upload" id="btn-upload">Load Photo</button>
+            <button class="btn btn-save" id="btn-save">Export Image</button>
+        </div>
+    </div>
+
+    <input type="file" id="file-input" accept="image/*">
+
+    <script>
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d');
+        const fileInput = document.getElementById('file-input');
+        const placeholder = document.getElementById('placeholder');
+        const dropZone = document.getElementById('drop-zone');
+        const btnUpload = document.getElementById('btn-upload');
+        const btnSave = document.getElementById('btn-save');
+
+        const sliderBlur = document.getElementById('slider-blur');
+        const sliderStreaks = document.getElementById('slider-streaks');
+        const sliderDroplets = document.getElementById('slider-droplets');
+        const sliderScale = document.getElementById('slider-scale');
+
+        const valBlur = document.getElementById('val-blur');
+        const valStreaks = document.getElementById('val-streaks');
+        const valDroplets = document.getElementById('val-droplets');
+        const valScale = document.getElementById('val-scale');
+
+        let srcImage = null;
+        let sharpBuffer = document.createElement('canvas');
+        let sharpCtx = sharpBuffer.getContext('2d');
+        let blurBuffer = document.createElement('canvas');
+        let blurCtx = blurBuffer.getContext('2d');
+
+        // UI Event Listeners
+        sliderBlur.addEventListener('input', (e) => { valBlur.innerText = e.target.value + 'px'; generateWetPipeline(); });
+        sliderStreaks.addEventListener('input', (e) => { valStreaks.innerText = e.target.value; generateWetPipeline(); });
+        sliderDroplets.addEventListener('input', (e) => { valDroplets.innerText = e.target.value; generateWetPipeline(); });
+        sliderScale.addEventListener('input', (e) => { valScale.innerText = e.target.value + '%'; generateWetPipeline(); });
+
+        btnUpload.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('click', () => { if(!srcImage) fileInput.click(); });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                srcImage = new Image();
+                srcImage.onload = () => {
+                    placeholder.style.display = 'none';
+                    canvas.style.display = 'block';
+                    setupCanvasSizes();
+                    generateWetPipeline();
+                };
+                srcImage.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        function setupCanvasSizes() {
+            const targetDim = 800;
+            let w = srcImage.width;
+            let h = srcImage.height;
+
+            if (w > h && w > targetDim) {
+                h = Math.round((h * targetDim) / w);
+                w = targetDim;
+            } else if (h > targetDim) {
+                w = Math.round((w * targetDim) / h);
+                h = targetDim;
+            }
+
+            canvas.width = w;
+            canvas.height = h;
+            sharpBuffer.width = w;
+            sharpBuffer.height = h;
+            blurBuffer.width = w;
+            blurBuffer.height = h;
+
+            // Cache the perfectly sharp background layer
+            sharpCtx.drawImage(srcImage, 0, 0, w, h);
+        }
+
+        function generateWetPipeline() {
+            if (!srcImage) return;
+
+            const w = canvas.width;
+            const h = canvas.height;
+            const blurVal = parseInt(sliderBlur.value);
+            const streakCount = parseInt(sliderStreaks.value);
+            const dropletCount = parseInt(sliderDroplets.value);
+            const baseScale = parseInt(sliderScale.value) / 100;
+
+            // Step 1: Compute and cache the uniform glass condensation layer
+            blurCtx.clearRect(0, 0, w, h);
+            blurCtx.save();
+            blurCtx.filter = `blur(${blurVal}px) brightness(0.88) contrast(1.05)`;
+            blurCtx.drawImage(sharpBuffer, 0, 0);
+            blurCtx.restore();
+
+            // Initial view drawing the foggy window layer
+            ctx.drawImage(blurBuffer, 0, 0);
+
+            // Step 2: Seed seedable random distribution for consistency across adjustments
+            Math.seed = 42; 
+            const seededRandom = () => {
+                let x = Math.sin(Math.seed++) * 10000;
+                return x - Math.floor(x);
+            };
+
+            // Step 3: Draw clear vertical fluid trails across condensation layer
+            for (let i = 0; i < streakCount; i++) {
+                let startX = seededRandom() * w;
+                let currentX = startX;
+                let trackPoints = [];
+
+                // Track stream path down the screen glass surface
+                for (let y = 0; y < h; y += 8) {
+                    currentX += Math.sin(y * 0.05 + i) * 1.2 + (seededRandom() - 0.5) * 2;
+                    // Keep bounds tight
+                    if (currentX < 10) currentX = 10;
+                    if (currentX > w - 10) currentX = w - 10;
+                    trackPoints.push({ x: currentX, y: y });
+                }
+
+                // Render trails by blending the sharp background into the running water stream
+                ctx.save();
+                ctx.beginPath();
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.lineWidth = (10 + seededRandom() * 12) * baseScale;
+
+                if (trackPoints.length > 0) {
+                    ctx.moveTo(trackPoints[0].x, trackPoints[0].y);
+                    for (let p of trackPoints) {
+                        ctx.lineTo(p.x, p.y);
+                    }
+                }
+                
+                // Mask track area, revealing sharp background within water trails
+                ctx.save();
+                ctx.clip();
+                ctx.drawImage(sharpBuffer, 0, 0);
+                ctx.restore();
+
+                // Apply soft highlights/shading to outer limits of trails to achieve organic fluid volume
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+                ctx.lineWidth += 2;
+                ctx.stroke();
+                ctx.strokeStyle = 'rgba(0, 0, 0, 0.15)';
+                ctx.lineWidth -= 4;
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            // Step 4: Render distinct 3D ambient droplets on glass interface
+            for (let d = 0; d < dropletCount; d++) {
+                let dropX = seededRandom() * w;
+                let dropY = seededRandom() * h;
+                let radius = (3 + seededRandom() * 10) * baseScale;
+
+                renderFluidDroplet(ctx, sharpBuffer, dropX, dropY, radius);
+            }
+        }
+
+        function renderFluidDroplet(targetCtx, sharpCanvas, x, y, r) {
+            targetCtx.save();
+
+            // Create droplet contour clipping path
+            targetCtx.beginPath();
+            targetCtx.arc(x, y, r, 0, Math.PI * 2);
+            targetCtx.clip();
+
+            // Water behaves as a refractive lens, compressing and magnifying the sharp image layer
+            const distortionOffset = r * 0.25;
+            targetCtx.drawImage(
+                sharpCanvas,
+                x - r * 1.3, y - r * 1.3, r * 2.6, r * 2.6, 
+                x - r + distortionOffset, y - r + distortionOffset, r * 2, r * 2
+            );
+            targetCtx.restore();
+
+            // Add drop shadows along top-left edges
+            targetCtx.save();
+            let boundaryShadow = targetCtx.createRadialGradient(x - r * 0.15, y - r * 0.15, r * 0.6, x, y, r);
+            boundaryShadow.addColorStop(0, 'rgba(0, 0, 0, 0)');
+            boundaryShadow.addColorStop(0.8, 'rgba(0, 0, 0, 0.25)');
+            boundaryShadow.addColorStop(1, 'rgba(0, 0, 0, 0.65)');
+            targetCtx.fillStyle = boundaryShadow;
+            targetCtx.beginPath();
+            targetCtx.arc(x, y, r, 0, Math.PI * 2);
+            targetCtx.fill();
+
+            // Internal liquid gradient illumination
+            let internalGlow = targetCtx.createRadialGradient(x + r * 0.2, y + r * 0.2, 0, x + r * 0.2, y + r * 0.2, r * 0.8);
+            internalGlow.addColorStop(0, 'rgba(255, 255, 255, 0.35)');
+            internalGlow.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            targetCtx.fillStyle = internalGlow;
+            targetCtx.beginPath();
+            targetCtx.arc(x, y, r, 0, Math.PI * 2);
+            targetCtx.fill();
+
+            // Crisp specular white highlight catching ambient light sources
+            targetCtx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+            targetCtx.beginPath();
+            targetCtx.arc(x - r * 0.35, y - r * 0.35, r * 0.18, 0, Math.PI * 2);
+            targetCtx.fill();
+
+            targetCtx.restore();
+        }
+
+        btnSave.addEventListener('click', () => {
+            if (!srcImage) return;
+            const link = document.createElement('a');
+            link.download = 'wet_glass_masterpiece.jpg';
+            link.href = canvas.toDataURL('image/jpeg', 0.95);
+            link.click();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shagor Premium Paper Textured Studio</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #0b0c10;
+            color: #e5e7eb;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 500px;
+            padding: 24px;
+            background: #13151a;
+            border-radius: 24px;
+            box-shadow: 0 20px 45px rgba(0,0,0,0.6);
+            border: 1px solid #222630;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            background: linear-gradient(45deg, #00f2fe, #4facfe, #ff758c);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .canvas-container {
+            width: 100%;
+            margin-bottom: 20px;
+            background: #1a1d26;
+            border-radius: 16px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 280px;
+            border: 1px solid #272c3a;
+        }
+
+        canvas {
+            max-width: 100%;
+            max-height: 50vh;
+            display: block;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+        }
+
+        /* 🎛️ স্লাইডার ও কন্ট্রোল এরিয়া */
+        .control-panel {
+            background: #1a1d26;
+            padding: 16px;
+            border-radius: 16px;
+            border: 1px solid #272c3a;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .slider-group {
+            margin-bottom: 15px;
+        }
+
+        .slider-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: #9ca3af;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .slider-label span {
+            color: #00f2fe;
+            font-weight: bold;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 5px;
+            background: #2e3446;
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #00f2fe, #4facfe);
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,242,254,0.4);
+        }
+
+        input[type="range"]:disabled::-webkit-slider-thumb {
+            background: #4b5563;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        /* 🔘 অ্যাকশন বাটন */
+        .btn-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .upload-btn, .save-btn {
+            padding: 15px 24px;
+            font-size: 16px;
+            font-weight: 700;
+            border-radius: 35px;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .upload-btn {
+            border: 1px solid #272c3a;
+            background: #222632;
+            color: #fff;
+        }
+
+        .save-btn {
+            background: linear-gradient(45deg, #00f2fe, #4facfe);
+            color: #0b0c10;
+            box-shadow: 0 4px 18px rgba(0, 242, 254, 0.3);
+        }
+
+        .save-btn:disabled {
+            background: #232733 !important;
+            color: #555c6d !important;
+            box-shadow: none !important;
+            cursor: not-allowed;
+        }
+
+        .loader {
+            visibility: hidden;
+            color: #00f2fe;
+            font-size: 13px;
+            margin-top: 6px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Paper Texture Studio</h2>
+    
+    <div class="canvas-container">
+        <canvas id="photoCanvas"></canvas>
+    </div>
+
+    <div class="control-panel">
+        <div class="slider-group">
+            <div class="slider-label">
+                <label for="grainSlider">Paper Grain Intensity</label>
+                <span id="grainVal">25</span>
+            </div>
+            <input type="range" id="grainSlider" min="5" max="60" value="25" oninput="onSliderChange()" disabled>
+        </div>
+
+        <div class="slider-group">
+            <div class="slider-label">
+                <label for="warmthSlider">Retro Tone & Matte Blend</label>
+                <span id="warmthVal">30</span>
+            </div>
+            <input type="range" id="warmthSlider" min="0" max="60" value="30" oninput="onSliderChange()" disabled>
+        </div>
+    </div>
+
+    <div class="btn-wrapper">
+        <label class="upload-btn">
+            <input type="file" id="imageLoader" accept="image/*"/>
+            Upload Photo
+        </label>
+        <button id="saveBtn" class="save-btn" onclick="savePaperPhoto()" disabled>Download Paper Effect</button>
+        <div id="loadingText" class="loader">Fusing paper textures...</div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('photoCanvas');
+    const ctx = canvas.getContext('2d');
+    const imageLoader = document.getElementById('imageLoader');
+    const grainSlider = document.getElementById('grainSlider');
+    const warmthSlider = document.getElementById('warmthSlider');
+    const saveBtn = document.getElementById('saveBtn');
+    const loadingText = document.getElementById('loadingText');
+    
+    let originalImage = new Image();
+    let renderTimeout = null;
+
+    imageLoader.addEventListener('change', handleImage, false);
+
+    function handleImage(e) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            originalImage.onload = function() {
+                // ছবির অনুপাত ঠিক রেখে স্ট্যান্ডার্ড হাই-কোয়ালিটি রেজোলিউশন সেটআপ
+                let targetWidth = originalImage.width;
+                let targetHeight = originalImage.height;
+                const maxDimension = 700;
+
+                if (targetWidth > maxDimension || targetHeight > maxDimension) {
+                    if (targetWidth > targetHeight) {
+                        targetHeight = Math.round((targetHeight * maxDimension) / targetWidth);
+                        targetWidth = maxDimension;
+                    } else {
+                        targetWidth = Math.round((targetWidth * maxDimension) / targetHeight);
+                    }
+                }
+
+                canvas.width = targetWidth;
+                canvas.height = targetHeight;
+                
+                // সমস্ত ইনপুট এনাবল করা
+                grainSlider.disabled = false;
+                warmthSlider.disabled = false;
+                saveBtn.disabled = false; 
+                
+                applyPaperTexturedFX();
+            }
+            originalImage.src = event.target.result;
+        }
+        if(e.target.files[0]) {
+            reader.readAsDataURL(e.target.files[0]);
+        }
+    }
+
+    function onSliderChange() {
+        document.getElementById('grainVal').innerText = grainSlider.value;
+        document.getElementById('warmthVal').innerText = warmthSlider.value;
+        
+        if (!originalImage.src) return;
+        loadingText.style.visibility = 'visible';
+        saveBtn.disabled = true;
+
+        clearTimeout(renderTimeout);
+        renderTimeout = setTimeout(() => {
+            applyPaperTexturedFX();
+        }, 60);
+    }
+
+    // 🚀 রিয়েল-টাইম পেপার টেক্সচার ইঞ্জিন
+    function applyPaperTexturedFX() {
+        if (!originalImage.src) return;
+
+        const width = canvas.width;
+        const height = canvas.height;
+
+        // ১. বেস ইমেজ ড্রয়িং এবং ভিনটেজ রেট্রো কালার গ্রেডিং
+        ctx.drawImage(originalImage, 0, 0, width, height);
+        
+        const toneFactor = parseInt(warmthSlider.value);
+        // সায়ান এবং মেট লুকের সমন্বয়ে কাস্টম সিএসএস ফিল্টার মিক্সিং
+        ctx.filter = `contrast(1.1) saturate(1.25) sepia(${toneFactor * 0.5}%) brightness(1.02)`;
+        ctx.drawImage(canvas, 0, 0);
+        ctx.filter = "none";
+
+        // ২. ক্যানভাস পিক্সেল ডেটা এক্সট্রাকশন (গ্রেইন প্রসেসিং-এর জন্য)
+        const imgData = ctx.getImageData(0, 0, width, height);
+        const data = imgData.data;
+        const grainIntensity = parseInt(grainSlider.value);
+
+        // ৩. প্রসিডিউরাল পেপার ফাইবার জেনারেশন লুপ
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                const idx = (y * width + x) * 4;
+
+                // হাই-ফ্রিকোয়েন্সি পেপার ফাইবার নয়েজ ক্যালকুলেশন
+                // গাণিতিক র্যান্ডমাইজেশন দিয়ে কাগজের খসখসে ভাব আনা হয়েছে
+                let noise = (Math.random() - 0.5) * grainIntensity;
+                
+                // একটু বড় বড় পেপার ডট বা টেক্সচার স্পট তৈরি করার জন্য কো-অর্ডিনেট বেসড নয়েজ ব্লেন্ডিং
+                if ((x % 3 === 0 && y % 2 === 0) || (x + y) % 7 === 0) {
+                    noise += (Math.random() - 0.4) * (grainIntensity * 0.4);
+                }
+
+                // পিক্সেল কালার শিফটিং (কাগজের টেক্সচারের সাথে রঙ মেশানো)
+                data[idx]     = Math.min(255, Math.max(0, data[idx] + noise));     // Red
+                data[idx + 1] = Math.min(255, Math.max(0, data[idx + 1] + noise)); // Green
+                data[idx + 2] = Math.min(255, Math.max(0, data[idx + 2] + noise)); // Blue
+            }
+        }
+        ctx.putImageData(imgData, 0, 0);
+
+        // ৪. সফট পেপার ওভারলে গ্লো এবং ভিনটেজ ম্যাট ফিনিশিং
+        ctx.globalCompositeOperation = 'soft-light';
+        ctx.fillStyle = `rgba(238, 225, 201, ${toneFactor / 180})`; // লাইট লাক্সারি পেপার হিউ ব্যালেন্স
+        ctx.fillRect(0, 0, width, height);
+        
+        // ভিনাইলো বা এনালগ পেপার বর্ডার শ্যাডো (Vignette এফেক্ট)
+        const gradient = ctx.createRadialGradient(width/2, height/2, Math.max(width, height) * 0.4, width/2, height/2, Math.max(width, height) * 0.8);
+        gradient.addColorStop(0, 'rgba(0,0,0,0)');
+        gradient.addColorStop(1, 'rgba(0,0,0,0.35)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, width, height);
+        
+        // কম্পোজিট মেথড রিসেট
+        ctx.globalCompositeOperation = 'source-over';
+
+        loadingText.style.visibility = 'hidden';
+        saveBtn.disabled = false;
+    }
+
+    function savePaperPhoto() {
+        if (!originalImage.src) return;
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.95);
+
+        const downloadLink = document.createElement('a');
+        downloadLink.download = 'shagor_paper_effect_' + Date.now() + '.jpg';
+        downloadLink.href = dataUrl;
+        downloadLink.click();
+
+        // অ্যান্ড্রয়েড সেভ টু গ্যালারি সাপোর্ট
+        if (window.AndroidInterface && window.AndroidInterface.saveToGallery) {
+            window.AndroidInterface.saveToGallery(dataUrl);
+        }
+    }
+</script>
+
+</body>
+</html>

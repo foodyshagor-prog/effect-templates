@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shagor Hope Poster Style Studio</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #0d0e12;
+            color: #e2e8f0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 500px;
+            padding: 24px;
+            background: #15171e;
+            border-radius: 24px;
+            box-shadow: 0 16px 40px rgba(0,0,0,0.6);
+            border: 1px solid #222531;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            background: linear-gradient(45deg, #0A2342, #D12229, #7499A3, #EEDCA5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .canvas-container {
+            width: 100%;
+            margin-bottom: 20px;
+            background: #1b1d26;
+            border-radius: 16px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 300px;
+            border: 1px dashed #33384a;
+        }
+
+        canvas {
+            max-width: 100%;
+            max-height: 52vh;
+            display: block;
+            border-radius: 8px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+        }
+
+        /* 🗂️ টেক্সট ও ভাইব কন্ট্রোল এরিয়া */
+        .control-panel {
+            background: #1b1d26;
+            padding: 16px;
+            border-radius: 16px;
+            border: 1px solid #222531;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .input-group {
+            margin-bottom: 12px;
+        }
+
+        .input-group:last-child {
+            margin-bottom: 0;
+        }
+
+        label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #8f9bba;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        select, input[type="text"], textarea {
+            width: 100%;
+            background: #0d0e12;
+            border: 1px solid #2d3142;
+            color: #fff;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            box-sizing: border-box;
+            transition: border 0.3s ease;
+        }
+
+        select:focus, input[type="text"]:focus, textarea:focus {
+            border-color: #7499A3;
+        }
+
+        textarea {
+            resize: none;
+            height: 55px;
+            font-family: inherit;
+        }
+
+        .sliders {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .slider-block {
+            flex: 1;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: #2d3142;
+            border-radius: 2px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #D12229;
+            cursor: pointer;
+        }
+
+        /* 🔘 বাটন গ্রুপ */
+        .btn-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .upload-btn, .save-btn {
+            padding: 14px 24px;
+            font-size: 15px;
+            font-weight: 700;
+            border-radius: 30px;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .upload-btn {
+            border: 1px solid #2d3142;
+            background: #222531;
+            color: #fff;
+        }
+
+        .save-btn {
+            background: linear-gradient(135deg, #D12229, #0A2342);
+            color: white;
+            box-shadow: 0 4px 15px rgba(209, 34, 41, 0.3);
+        }
+
+        .save-btn:disabled, select:disabled, input:disabled, textarea:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Hope Poster Studio</h2>
+    
+    <div class="canvas-container">
+        <canvas id="posterCanvas"></canvas>
+    </div>
+
+    <div class="control-panel">
+        <div class="input-group">
+            <label for="vibePreset">Choose Personality Vibe</label>
+            <select id="vibePreset" onchange="applyPreset(this.value)" disabled>
+                <option value="hope">HOPE - Optimistic Dreamer</option>
+                <option value="hustle">HUSTLE - Hard Worker</option>
+                <option value="alpha">ALPHA - Independent Leader</option>
+                <option value="calm">SILENT - Deep Thinker</option>
+                <option value="create">CREATE - Maverick Artist</option>
+                <option value="custom">✍️ Custom Text Mode</option>
+            </select>
+        </div>
+
+        <div class="input-group">
+            <label for="headlineInput">Headline (Bold Word)</label>
+            <input type="text" id="headlineInput" maxlength="12" oninput="updatePosterText()" disabled>
+        </div>
+
+        <div class="input-group">
+            <label for="paragraphInput">Personality Description</label>
+            <textarea id="paragraphInput" maxlength="65" oninput="updatePosterText()" disabled></textarea>
+        </div>
+
+        <div class="input-group sliders">
+            <div class="slider-block">
+                <label>Contrast Threshold</label>
+                <input type="range" id="thresholdSlider" min="80" max="150" value="120" oninput="renderPosterPipeline()" disabled>
+            </div>
+        </div>
+    </div>
+
+    <div class="btn-wrapper">
+        <label class="upload-btn">
+            <input type="file" id="imageLoader" accept="image/*"/>
+            Upload Face Image
+        </label>
+        <button id="saveBtn" class="save-btn" onclick="savePoster()" disabled>Download Poster Art</button>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('posterCanvas');
+    const ctx = canvas.getContext('2d');
+    const imageLoader = document.getElementById('imageLoader');
+    const saveBtn = document.getElementById('saveBtn');
+    const thresholdSlider = document.getElementById('thresholdSlider');
+    
+    // কন্ট্রোল ইনপুটসমূহ
+    const vibePreset = document.getElementById('vibePreset');
+    const headlineInput = document.getElementById('headlineInput');
+    const paragraphInput = document.getElementById('paragraphInput');
+
+    let originalImage = new Image();
+
+    // 🌟 নিখুঁত পার্সোনালিটি ভাইব টেক্সট ডেটাবেজ
+    const textPresets = {
+        hope: {
+            headline: "HOPE",
+            paragraph: "Believing in tomorrow, standardizing greatness, and fighting today."
+        },
+        hustle: {
+            headline: "HUSTLE",
+            paragraph: "Own the night. Execute the plan. Let results make the noise."
+        },
+        alpha: {
+            headline: "LEAD",
+            paragraph: "Rules are built for the sheep. Alphas create empires alone."
+        },
+        calm: {
+            headline: "SILENT",
+            paragraph: "Deep rivers run quiet. Moving in shadows, master of minds."
+        },
+        create: {
+            headline: "MAVERICK",
+            paragraph: "Breaking standard patterns to rewrite the colorful future."
+        }
+    };
+
+    // ক্লাসিক শেপার্ড ফেয়ারি কালার প্যালেট (Authentic Hex Codes)
+    const HOPE_CREAM = [238, 220, 165]; // #EEDCA5
+    const HOPE_LBLUE = [116, 153, 163]; // #7499A3
+    const HOPE_RED   = [209, 34, 41];   // #D12229
+    const HOPE_DBLUE = [10, 35, 66];    // #0A2342
+
+    imageLoader.addEventListener('change', handleImage, false);
+
+    function handleImage(e) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            originalImage.onload = function() {
+                // ২:৩ পোস্টার রেশিওতে রেডি করা (Standard Poster Dimension)
+                canvas.width = 600;
+                canvas.height = 850;
+
+                // ইনপুট ফিল্ড সচল করা
+                vibePreset.disabled = false;
+                headlineInput.disabled = false;
+                paragraphInput.disabled = false;
+                thresholdSlider.disabled = false;
+                saveBtn.disabled = false;
+
+                // ডিফল্ট প্রিসেট লোড করা
+                applyPreset('hope');
+            }
+            originalImage.src = event.target.result;
+        }
+        if(e.target.files[0]) {
+            reader.readAsDataURL(e.target.files[0]);
+        }
+    }
+
+    function applyPreset(key) {
+        if(key !== 'custom') {
+            headlineInput.value = textPresets[key].headline;
+            paragraphInput.value = textPresets[key].paragraph;
+        }
+        renderPosterPipeline();
+    }
+
+    function updatePosterText() {
+        vibePreset.value = 'custom'; // ইউজার নিজে লিখলে কাস্টম মোড এক্টিভ হবে
+        renderPosterPipeline();
+    }
+
+    // 🚀 মূল ইমেজ প্রসেসিং ও পোস্টার জেনারেশন পাইপলাইন
+    function renderPosterPipeline() {
+        if (!originalImage.src) return;
+
+        // ব্যাকগ্রাউন্ড ক্লিয়ার
+        ctx.fillStyle = "#0A2342";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // ১. ফেস ইমেজ ফিট করা (স্মার্ট ক্রপ এরিয়া)
+        const imgRatio = originalImage.width / originalImage.height;
+        const renderWidth = canvas.width;
+        const renderHeight = canvas.width / imgRatio;
+        
+        // টেক্সট বক্সের জন্য নিচে জায়গা রেখে ইমেজ ড্র করা
+        const imageZoneHeight = canvas.height - 160; 
+        
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(0, 0, canvas.width, imageZoneHeight);
+        ctx.clip();
+        ctx.drawImage(originalImage, 0, 0, renderWidth, renderHeight);
+        ctx.restore();
+
+        // ২. ভেক্টর ৪-কালার থ্রেশহোল্ড এবং স্ক্রিন-লাইন এফেক্ট অ্যানালাইসিস
+        const imgData = ctx.getImageData(0, 0, canvas.width, imageZoneHeight);
+        const data = imgData.data;
+        const midT = parseInt(thresholdSlider.value);
+
+        for (let i = 0; i < data.length; i += 4) {
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+
+            // লুমিন্যান্স হিসাব করা (সঠিক ব্রাইটনেস রিডিং)
+            const brightness = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+            const pixelIndex = i / 4;
+            const y = Math.floor(pixelIndex / canvas.width);
+            const x = pixelIndex % canvas.width;
+
+            let finalColor;
+
+            // ৪টি স্তরে কালার ম্যাপিং ও ট্রানজিশন লাইনিং জেনারেশন
+            if (brightness < midT - 45) {
+                finalColor = HOPE_DBLUE;
+            } else if (brightness < midT - 10) {
+                finalColor = HOPE_RED;
+            } else if (brightness < midT + 30) {
+                // 🎨 ক্লাসিক ভিনটেজ স্ট্রিপ এফেক্ট (Authentic Halftone Effect Lines)
+                if ((x + y) % 6 < 3) {
+                    finalColor = HOPE_RED;
+                } else {
+                    finalColor = HOPE_LBLUE;
+                }
+            } else if (brightness < midT + 55) {
+                finalColor = HOPE_LBLUE;
+            } else {
+                finalColor = HOPE_CREAM;
+            }
+
+            data[i]     = finalColor[0];
+            data[i + 1] = finalColor[1];
+            data[i + 2] = finalColor[2];
+        }
+        ctx.putImageData(imgData, 0, 0);
+
+        // ৩. নিচের সলিড টেক্সট প্যানেল ডিজাইন
+        ctx.fillStyle = "#0A2342"; // নিচের ব্যানার ব্যাকগ্রাউন্ড
+        ctx.fillRect(0, imageZoneHeight, canvas.width, 160);
+
+        // ৪. হেডলাইন টেক্সট রেন্ডারিং (Bold Personality Core Word)
+        const headline = headlineInput.value.toUpperCase() || "HOPE";
+        ctx.fillStyle = "#7499A3"; // ক্লাসিক লাইট ব্লু টেক্সট কালার
+        ctx.font = "900 64px 'Impact', 'Arial Black', sans-serif";
+        ctx.textAlign = "center";
+        ctx.letterSpacing = "4px";
+        ctx.fillText(headline, canvas.width / 2, imageZoneHeight + 65);
+
+        // ৫. প্যারাগ্রাফ রেন্ডারিং (Multi-line Description Text)
+        const paragraph = paragraphInput.value || "";
+        ctx.fillStyle = "#EEDCA5"; // ক্রিম কালার সাবটেক্সট
+        ctx.font = "italic 500 16px 'Segoe UI', sans-serif";
+        ctx.letterSpacing = "0px";
+        
+        wrapText(ctx, paragraph, canvas.width / 2, imageZoneHeight + 105, 480, 24);
+    }
+
+    // টেক্সট অটোমেটিক্যালি মাল্টি-লাইনে ভাঙার ফাংশন
+    function wrapText(context, text, x, y, maxWidth, lineHeight) {
+        const words = text.split(' ');
+        let line = '';
+        let currentY = y;
+
+        for (let n = 0; n < words.length; n++) {
+            let testLine = line + words[n] + ' ';
+            let metrics = context.measureText(testLine);
+            let testWidth = metrics.width;
+            if (testWidth > maxWidth && n > 0) {
+                context.fillText(line, x, currentY);
+                line = words[n] + ' ';
+                currentY += lineHeight;
+            } else {
+                line = testLine;
+            }
+        }
+        context.fillText(line, x, currentY);
+    }
+
+    function savePoster() {
+        if (!originalImage.src) return;
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.95);
+
+        const downloadLink = document.createElement('a');
+        downloadLink.download = 'shagor_hope_poster_' + Date.now() + '.jpg';
+        downloadLink.href = dataUrl;
+        downloadLink.click();
+
+        if (window.AndroidInterface && window.AndroidInterface.saveToGallery) {
+            window.AndroidInterface.saveToGallery(dataUrl);
+        }
+    }
+</script>
+
+</body>
+</html>

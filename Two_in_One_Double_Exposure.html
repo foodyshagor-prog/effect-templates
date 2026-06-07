@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Two In One FX</title>
+    <style>
+        :root {
+            --accent: #ff3e3e; /* Red for the duotone side */
+            --bg: #121212;
+            --surface: #1e1e1e;
+            --text: #ffffff;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background: var(--bg); color: var(--text); padding: 15px; min-height: 100vh; display: flex; flex-direction: column; }
+        
+        .header { text-align: center; margin-bottom: 20px; }
+        .header h1 { font-size: 1.2rem; text-transform: uppercase; letter-spacing: 2px; color: #888; }
+        
+        .canvas-container { 
+            width: 100%; aspect-ratio: 4/5; background: var(--surface); 
+            border-radius: 12px; overflow: hidden; display: flex; align-items: center; justify-content: center;
+            position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+        canvas { max-width: 100%; max-height: 100%; object-fit: contain; }
+        
+        .controls { margin-top: 20px; display: flex; flex-direction: column; gap: 15px; }
+        .control-group { background: var(--surface); padding: 12px; border-radius: 10px; }
+        .label { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 8px; color: #aaa; }
+        
+        input[type="range"] { width: 100%; accent-color: var(--accent); }
+        
+        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        button, .file-label { 
+            padding: 12px; border: none; border-radius: 8px; background: #333;
+            color: white; font-weight: bold; text-align: center; cursor: pointer; font-size: 0.8rem;
+        }
+        .btn-main { background: var(--accent); color: white; grid-column: span 2; }
+        input[type="file"] { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Two In One FX</h1>
+    </div>
+
+    <div class="canvas-container">
+        <canvas id="canvas"></canvas>
+    </div>
+
+    <div class="controls">
+        <div class="control-group">
+            <div class="label"><span>Split Position</span><span id="posVal">50%</span></div>
+            <input type="range" id="splitRange" min="10" max="90" value="50">
+        </div>
+        
+        <div class="btn-grid">
+            <label class="file-label">LOAD SUBJECT
+                <input type="file" id="uploadSubject" accept="image/*">
+            </label>
+            <label class="file-label">LOAD TEXTURE
+                <input type="file" id="uploadTexture" accept="image/*">
+            </label>
+            <button id="saveBtn" class="btn-main">SAVE IMAGE</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        const splitRange = document.getElementById('splitRange');
+        
+        let subjectImg = new Image();
+        let textureImg = new Image();
+
+        function handleUpload(input, imgObj) {
+            input.onchange = (e) => {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    imgObj.onload = render;
+                    imgObj.src = event.target.result;
+                };
+                reader.readAsDataURL(e.target.files[0]);
+            };
+        }
+
+        handleUpload(document.getElementById('uploadSubject'), subjectImg);
+        handleUpload(document.getElementById('uploadTexture'), textureImg);
+
+        function render() {
+            if (!subjectImg.src) return;
+
+            // Set canvas size to subject
+            canvas.width = subjectImg.width;
+            canvas.height = subjectImg.height;
+
+            const splitX = (splitRange.value / 100) * canvas.width;
+            document.getElementById('posVal').innerText = splitRange.value + '%';
+
+            // 1. Draw Left Side (Desaturated / Portrait)
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(0, 0, splitX, canvas.height);
+            ctx.clip();
+            ctx.filter = 'grayscale(100%) contrast(1.1) brightness(1.1)';
+            ctx.drawImage(subjectImg, 0, 0);
+            ctx.restore();
+
+            // 2. Draw Right Side (Duotone)
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(splitX, 0, canvas.width - splitX, canvas.height);
+            ctx.clip();
+            
+            // Duotone filter (Deep Red)
+            ctx.filter = 'sepia(1) hue-rotate(320deg) saturate(2) contrast(1.2)';
+            ctx.drawImage(subjectImg, 0, 0);
+            
+            // 3. Apply Texture (Double Exposure)
+            if (textureImg.src) {
+                ctx.globalCompositeOperation = 'screen'; // Blends the texture
+                ctx.globalAlpha = 0.8;
+                ctx.drawImage(textureImg, 0, 0, canvas.width, canvas.height);
+            }
+            
+            ctx.restore();
+        }
+
+        splitRange.oninput = render;
+
+        document.getElementById('saveBtn').onclick = () => {
+            if (!subjectImg.src) return;
+            const link = document.createElement('a');
+            link.download = 'two-in-one-fx.jpg';
+            link.href = canvas.toDataURL('image/jpeg', 0.9);
+            link.click();
+        };
+    </script>
+</body>
+</html>

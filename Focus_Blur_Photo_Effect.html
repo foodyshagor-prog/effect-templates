@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Focus Blur Effect</title>
+    <style>
+        :root {
+            --primary: #ffaa00;
+            --bg: #121212;
+            --surface: #1e1e1e;
+            --text: #ffffff;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+        body { background: var(--bg); color: var(--text); padding: 20px; min-height: 100vh; display: flex; flex-direction: column; }
+        
+        .header { text-align: center; margin-bottom: 20px; font-weight: bold; color: var(--primary); }
+        
+        .canvas-container { 
+            width: 100%; aspect-ratio: 1/1; background: var(--surface); 
+            border-radius: 12px; overflow: hidden; display: flex; align-items: center; justify-content: center;
+            position: relative; box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+        canvas { max-width: 100%; max-height: 100%; object-fit: contain; }
+        
+        .controls { margin-top: 20px; display: flex; flex-direction: column; gap: 15px; }
+        .slider-group { display: flex; flex-direction: column; gap: 5px; }
+        
+        input[type="range"] { width: 100%; accent-color: var(--primary); }
+        
+        .btn-group { display: flex; gap: 10px; margin-top: 10px; }
+        button, .file-label { 
+            flex: 1; padding: 12px; border: none; border-radius: 8px; background: var(--primary);
+            color: black; font-weight: bold; text-align: center; cursor: pointer;
+        }
+        .secondary { background: #444; color: white; }
+        input[type="file"] { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="header">FOCUS BLUR FX</div>
+
+    <div class="canvas-container">
+        <canvas id="canvas"></canvas>
+    </div>
+
+    <div class="controls">
+        <div class="slider-group">
+            <label>Blur Radius</label>
+            <input type="range" id="blurRange" min="0" max="20" value="8">
+        </div>
+        <div class="slider-group">
+            <label>Focus Spot Size</label>
+            <input type="range" id="radiusRange" min="10" max="300" value="120">
+        </div>
+        <div class="btn-group">
+            <label class="file-label secondary">LOAD IMAGE
+                <input type="file" id="upload" accept="image/*">
+            </label>
+            <button id="saveBtn">SAVE IMAGE</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        const upload = document.getElementById('upload');
+        const blurRange = document.getElementById('blurRange');
+        const radiusRange = document.getElementById('radiusRange');
+        
+        let img = new Image();
+
+        upload.onchange = (e) => {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                img.onload = () => {
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    render();
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(e.target.files[0]);
+        };
+
+        function render() {
+            if (!img.src) return;
+            
+            const blur = blurRange.value;
+            const focusRadius = parseInt(radiusRange.value);
+
+            // Draw blurred layer
+            ctx.filter = `blur(${blur}px) brightness(1.1) saturate(1.2)`;
+            ctx.drawImage(img, 0, 0);
+            
+            // Draw clear circular mask
+            ctx.globalCompositeOperation = 'destination-in';
+            const gradient = ctx.createRadialGradient(canvas.width/2, canvas.height/2, focusRadius*0.5, canvas.width/2, canvas.height/2, focusRadius);
+            gradient.addColorStop(0, 'rgba(0,0,0,1)');
+            gradient.addColorStop(1, 'rgba(0,0,0,0)');
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw original sharp image on top
+            ctx.globalCompositeOperation = 'destination-over';
+            ctx.filter = 'none';
+            ctx.drawImage(img, 0, 0);
+            
+            ctx.globalCompositeOperation = 'source-over';
+        }
+
+        [blurRange, radiusRange].forEach(s => s.oninput = render);
+
+        document.getElementById('saveBtn').onclick = () => {
+            const link = document.createElement('a');
+            link.download = 'focus-blur.jpg';
+            link.href = canvas.toDataURL('image/jpeg', 0.9);
+            link.click();
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shagor Artistic Pencil Sketch Studio</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #0b0c10;
+            color: #f1f5f9;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 95%;
+            max-width: 560px;
+            padding: 24px;
+            background: #131520;
+            border-radius: 28px;
+            box-shadow: 0 25px 65px rgba(0,0,0,0.9);
+            border: 1px solid #22263f;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        h2 {
+            margin-top: 0;
+            margin-bottom: 4px;
+            font-size: 24px;
+            font-weight: 800;
+            background: linear-gradient(45deg, #f8fafc, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            font-size: 11px;
+            color: #475569;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .canvas-container {
+            width: 100%;
+            margin-bottom: 22px;
+            background: #191c2c;
+            border-radius: 20px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 320px;
+            border: 1px dashed #3a4267;
+        }
+
+        canvas {
+            max-width: 100%;
+            max-height: 42vh;
+            display: block;
+            border-radius: 12px;
+            box-shadow: 0 15px 45px rgba(0,0,0,0.7);
+        }
+
+        /* 🎚️ মিডিয়া স্টাইল বাটন */
+        .style-panel {
+            margin-bottom: 16px;
+            text-align: left;
+        }
+
+        .section-label {
+            font-size: 11px;
+            color: #64748b;
+            text-transform: uppercase;
+            font-weight: 700;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .style-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .style-btn {
+            padding: 10px 2px;
+            background: #1b1e2f;
+            border: 1px solid #2d3350;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #94a3b8;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+
+        .style-btn:hover {
+            color: #fff;
+            border-color: #cbd5e1;
+        }
+
+        .style-btn.active {
+            background: linear-gradient(135deg, #f1f5f9, #cbd5e1);
+            color: #0f172a;
+            border-color: #ffffff;
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(255, 255, 255, 0.15);
+        }
+
+        /* ⚙️ কন্ট্রোল স্লাইডার্স */
+        .control-panel {
+            background: #181b2a;
+            padding: 18px;
+            border-radius: 20px;
+            border: 1px solid #2b314f;
+            margin-bottom: 22px;
+            text-align: left;
+        }
+
+        .slider-group {
+            margin-bottom: 16px;
+        }
+
+        .slider-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #94a3b8;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        .slider-label span {
+            color: #f1f5f9;
+            background: #252b46;
+            padding: 2px 8px;
+            border-radius: 6px;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 5px;
+            background: #2d3350;
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #f1f5f9;
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+        }
+
+        /* 🔘 ইন্টারেক্টিভ অ্যাকশন বাটন */
+        input[type="file"] {
+            display: none;
+        }
+
+        .upload-btn {
+            width: 100%;
+            padding: 14px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 16px;
+            cursor: pointer;
+            border: 1px dashed #404975;
+            background: #171926;
+            color: #94a3b8;
+            transition: all 0.2s ease;
+            box-sizing: border-box;
+            display: block;
+            margin-bottom: 16px;
+        }
+
+        .upload-btn.loaded {
+            border-style: solid;
+            border-color: #f1f5f9;
+            background: #202330;
+            color: #f8fafc;
+        }
+
+        .save-btn {
+            width: 100%;
+            padding: 15px 24px;
+            font-size: 16px;
+            font-weight: 700;
+            border-radius: 35px;
+            cursor: pointer;
+            border: none;
+            background: linear-gradient(90deg, #f1f5f9, #cbd5e1);
+            color: #0f172a;
+            box-shadow: 0 4px 25px rgba(255, 255, 255, 0.15);
+            transition: all 0.3s ease;
+        }
+
+        .save-btn:disabled {
+            background: #22263b !important;
+            color: #4b5275 !important;
+            box-shadow: none !important;
+            cursor: not-allowed;
+        }
+
+        .loader {
+            visibility: hidden;
+            color: #94a3b8;
+            font-size: 13px;
+            margin-top: 10px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Artistic Pencil Studio</h2>
+    <div class="subtitle">Fine Graphite & Charcoal Cross-Hatch</div>
+    
+    <div class="canvas-container">
+        <canvas id="pencilCanvas"></canvas>
+    </div>
+
+    <label class="upload-btn" id="uploadLabel">
+        <input type="file" id="imageLoader" accept="image/*"/>
+        ✏️ Import Base Image
+    </label>
+
+    <!-- 🖌️ স্কেচ টেক্সচার ও মোড সিলেকশন প্যানেল -->
+    <div class="style-panel">
+        <div class="section-label">Select Pencil Lead & Medium:</div>
+        <div class="style-grid">
+            <div class="style-btn active" id="m1" onclick="switchMedium('graphite', 'm1')">4B Graphite</div>
+            <div class="style-btn" id="m2" onclick="switchMedium('charcoal', 'm2')">Dark Charcoal</div>
+            <div class="style-btn" id="m3" onclick="switchMedium('cross', 'm3')">Cross-Hatch</div>
+            <div class="style-btn" id="m4" onclick="switchMedium('fine', 'm4')">Fine Contour</div>
+        </div>
+    </div>
+
+    <div class="control-panel">
+        <div class="slider-group">
+            <div class="slider-label">
+                <label for="strokeSlider">Stroke Details & Edge Sharpness</label>
+                <span id="strokeVal">35</span>
+            </div>
+            <input type="range" id="strokeSlider" min="15" max="75" value="35" oninput="onParamChange()" disabled>
+        </div>
+
+        <div class="slider-group">
+            <div class="slider-label">
+                <label for="shadingSlider">Shading Density / Contrast Level</label>
+                <span id="shadingVal">50</span>
+            </div>
+            <input type="range" id="shadingSlider" min="20" max="80" value="50" oninput="onParamChange()" disabled>
+        </div>
+
+        <div class="slider-group">
+            <div class="slider-label">
+                <label for="paperSlider">Paper Grain & Canvas Roughness</label>
+                <span id="paperVal">25</span>
+            </div>
+            <input type="range" id="paperSlider" min="10" max="60" value="25" oninput="onParamChange()" disabled>
+        </div>
+    </div>
+
+    <button id="exportBtn" class="save-btn" onclick="downloadSketch()" disabled>Export High-Res Masterpiece</button>
+    <div id="loadingText" class="loader">Sharpening procedural graphite tips...</div>
+</div>
+
+<script>
+    const canvas = document.getElementById('pencilCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    let baseImg = new Image();
+    let renderTimeout = null;
+    let currentMedium = 'graphite';
+
+    document.getElementById('imageLoader').addEventListener('change', (e) => {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            baseImg.onload = function() {
+                document.getElementById('uploadLabel').classList.add('loaded');
+                document.getElementById('uploadLabel').innerText = '✓ Base Image Loaded';
+                
+                setupCanvasDimensions();
+                enableUIControls();
+                renderPencilMagic();
+            }
+            baseImg.src = event.target.result;
+        }
+        if(e.target.files[0]) reader.readAsDataURL(e.target.files[0]);
+    });
+
+    function setupCanvasDimensions() {
+        let w = baseImg.width;
+        let h = baseImg.height;
+        const maxLimit = 750; // রিয়েল-টাইম কনভোলিউশন প্রসেসিংয়ের জন্য অপ্টিমাইজড রেজোলিউশন ক্যাপিং
+
+        if (w > maxLimit || h > maxLimit) {
+            if (w > h) { h = Math.round((h * maxLimit) / w); w = maxLimit; }
+            else { w = Math.round((w * maxLimit) / h); h = maxLimit; }
+        }
+        canvas.width = w;
+        canvas.height = h;
+    }
+
+    function enableUIControls() {
+        document.getElementById('strokeSlider').disabled = false;
+        document.getElementById('shadingSlider').disabled = false;
+        document.getElementById('paperSlider').disabled = false;
+        document.getElementById('exportBtn').disabled = false;
+    }
+
+    function switchMedium(mediumKey, elementId) {
+        document.querySelectorAll('.style-btn').forEach(el => el.classList.remove('active'));
+        document.getElementById(elementId).classList.add('active');
+        currentMedium = mediumKey;
+        
+        if (baseImg.src) renderPencilMagic();
+    }
+
+    function onParamChange() {
+        document.getElementById('strokeVal').innerText = document.getElementById('strokeSlider').value;
+        document.getElementById('shadingVal').innerText = document.getElementById('shadingSlider').value;
+        document.getElementById('paperVal').innerText = document.getElementById('paperSlider').value;
+
+        if (!baseImg.src) return;
+        document.getElementById('loadingText').style.visibility = 'visible';
+
+        clearTimeout(renderTimeout);
+        renderTimeout = setTimeout(() => {
+            renderPencilMagic();
+        }, 60);
+    }
+
+    // 🌪️ অ্যাডভান্সড আর্টিস্টিক পেন্সিল কোর রেন্ডারিং ইঞ্জিন
+    function renderPencilMagic() {
+        const w = canvas.width;
+        const h = canvas.height;
+
+        const edgeThreshold = parseInt(document.getElementById('strokeSlider').value);
+        const shadingDensity = parseInt(document.getElementById('shadingSlider').value) / 100;
+        const textureIntensity = parseInt(document.getElementById('paperSlider').value);
+
+        // ১. ইমেজ বাফারিং ক্যানভাস তৈরি করা পিক্সেল এনালাইসিসের জন্য
+        const memCanvas = document.createElement('canvas');
+        memCanvas.width = w;
+        memCanvas.height = h;
+        const memCtx = memCanvas.getContext('2d');
+        memCtx.drawImage(baseImg, 0, 0, w, h);
+        
+        const imgData = memCtx.getImageData(0, 0, w, h);
+        const pixels = imgData.data;
+
+        // ২. মেইন ক্যানভাস ক্লিয়ার করে বেস ড্রয়িং পেপার টেক্সচার তৈরি (Off-White/Cream Tone)
+        ctx.fillStyle = '#f4f3ef'; 
+        ctx.fillRect(0, 0, w, h);
+
+        // ৩. সোবেল কনভোলিউশন এবং প্রসিডিউরাল স্কেচিং ম্যাট্রিক্স লুপ
+        // এটি চুলের স্টাইল বা ফাইবারগুলোর নিখুঁত গভীরতা রেন্ডার করতে সাহায্য করে
+        for (let y = 1; y < h - 1; y += 1) {
+            for (let x = 1; x < w - 1; x += 1) {
+                
+                let idx = (y * w + x) * 4;
+
+                // ৩.১ লুমিন্যান্স বা গ্রে-স্কেল ভ্যালু ম্যাপিং
+                let l_center = (0.299 * pixels[idx] + 0.587 * pixels[idx+1] + 0.114 * pixels[idx+2]);
+                
+                // ৩.২ সোবেল কার্নেল এনার্জি ডিরেকশন ডিটেকশন (Horizontal & Vertical Delta)
+                let idx_right = (y * w + (x + 1)) * 4;
+                let idx_left  = (y * w + (x - 1)) * 4;
+                let idx_down  = ((y + 1) * w + x) * 4;
+                let idx_up    = ((y - 1) * w + x) * 4;
+
+                let l_right = (0.299 * pixels[idx_right] + 0.587 * pixels[idx_right+1] + 0.114 * pixels[idx_right+2]);
+                let l_left  = (0.299 * pixels[idx_left] + 0.587 * pixels[idx_left+1] + 0.114 * pixels[idx_left+2]);
+                let l_down  = (0.299 * pixels[idx_down] + 0.587 * pixels[idx_down+1] + 0.114 * pixels[idx_down+2]);
+                let l_up    = (0.299 * pixels[idx_up] + 0.587 * pixels[idx_up+1] + 0.114 * pixels[idx_up+2]);
+
+                // গ্রেডিয়েন্ট ক্যালকুলেশন
+                let dx = l_right - l_left;
+                let dy = l_down - l_up;
+                let edgePower = Math.sqrt(dx * dx + dy * dy);
+
+                // ৪. আর্টিস্টিক স্টক অ্যান্ড সেডিং মেকানিজম লুপ এক্সিকিউশন
+                if (edgePower > edgeThreshold) {
+                    // এটি ফাইন আউটলাইন স্ট্রোক জেনারেট করে
+                    let strokeOpacity = Math.min(1, (edgePower / 255) * 1.5);
+                    ctx.fillStyle = `rgba(35, 38, 43, ${strokeOpacity})`;
+                    ctx.fillRect(x, y, 1.2, 1.2);
+                } 
+                
+                // ৪.১ শ্যাডো বা ডার্ক এরিয়াতে পেন্সিল হ্যাচিং বা চারকোল পাউডার মিক্সিং
+                // এই পার্টটি চিত্র `image_7cdb48.png` এর মতো ড্রামাটিক ব্যাকগ্রাউন্ড টোন দেয়
+                if (l_center < (shadingDensity * 255)) {
+                    let darknessRatio = 1 - (l_center / 255);
+                    
+                    if (currentMedium === 'charcoal') {
+                        // সফট স্মাজ চারকোল ইফেক্ট
+                        if (Math.random() < (darknessRatio * 0.45)) {
+                            ctx.fillStyle = `rgba(20, 22, 26, ${darknessRatio * 0.35})`;
+                            ctx.fillRect(x, y, 1.5, 1.5);
+                        }
+                    } else if (currentMedium === 'cross-hatch' || currentMedium === 'cross') {
+                        // ভিন্টেজ ক্রস-হ্যাচ স্ট্রোক ডেনসিটি (৪৫ ডিগ্রী এবং ১৩৫ ডিগ্রী অ্যাঙ্গেল লাইন)
+                        if ((x + y) % 5 === 0 && Math.random() < darknessRatio) {
+                            ctx.fillStyle = `rgba(40, 44, 52, 0.45)`;
+                            ctx.fillRect(x, y, 1, 1);
+                        }
+                        if ((x - y) % 5 === 0 && Math.random() < (darknessRatio * 0.7)) {
+                            ctx.fillStyle = `rgba(40, 44, 52, 0.4)`;
+                            ctx.fillRect(x, y, 1, 1);
+                        }
+                    } else if (currentMedium === 'graphite') {
+                        // মাল্টি-ডিরেকশনাল ডার্ক পেন্সিল ফিল
+                        if ((x * 2 + y) % 4 === 0 && Math.random() < darknessRatio) {
+                            ctx.fillStyle = `rgba(30, 32, 38, ${darknessRatio * 0.5})`;
+                            ctx.fillRect(x, y, 1.2, 1.2);
+                        }
+                    }
+                }
+            }
+        }
+
+        // ৫. স্কেচিং পেপারের খসখসে ভাব আনার জন্য প্রো-লেভেল পেপার গ্রেইন ইঞ্জিন
+        ctx.save();
+        ctx.globalCompositeOperation = 'multiply';
+        ctx.globalAlpha = (textureIntensity / 100) * 0.35;
+        
+        for (let i = 0; i < (w * h) * 0.08; i++) {
+            let rx = Math.random() * w;
+            let ry = Math.random() * h;
+            let grainSize = 0.5 + Math.random() * 1;
+            ctx.fillStyle = Math.random() > 0.45 ? '#222' : '#fff';
+            ctx.fillRect(rx, ry, grainSize, grainSize);
+        }
+        ctx.restore();
+
+        // ৬. চারকোলে আঁকা ছবির ফিনিশিং বর্ডার বা সফট চারকোল ভিনিয়েট মিক্সিং
+        let vignetteGrad = ctx.createRadialGradient(w / 2, h / 2, Math.max(w, h) * 0.35, w / 2, h / 2, Math.max(w, h) * 0.7);
+        vignetteGrad.addColorStop(0, 'rgba(0,0,0,0)');
+        vignetteGrad.addColorStop(1, 'rgba(15, 16, 22, 0.65)'); // কোণগুলোতে ভারী গ্রাফাইট বা চারকোলের ফিনিশিং টাচ
+        ctx.fillStyle = vignetteGrad;
+        ctx.fillRect(0, 0, w, h);
+
+        document.getElementById('loadingText').style.visibility = 'hidden';
+    }
+
+    function downloadSketch() {
+        if (!baseImg.src) return;
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.96);
+
+        const downloadLink = document.createElement('a');
+        downloadLink.download = 'shagor_artistic_pencil_' + Date.now() + '.jpg';
+        downloadLink.href = dataUrl;
+        downloadLink.click();
+
+        // অ্যান্ড্রয়েড ইন্টারফেস প্রোডাকশন কম্প্যাটিবিলিটি
+        if (window.AndroidInterface && window.AndroidInterface.saveToGallery) {
+            window.AndroidInterface.saveToGallery(dataUrl);
+        }
+    }
+</script>
+
+</body>
+</html>

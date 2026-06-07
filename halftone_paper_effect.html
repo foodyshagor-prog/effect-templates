@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shagor Premium Halftone Paper Studio</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #0c0e14;
+            color: #f3f4f6;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 95%;
+            max-width: 550px;
+            padding: 24px;
+            background: #141824;
+            border-radius: 28px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.8);
+            border: 1px solid #252b41;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        h2 {
+            margin-top: 0;
+            margin-bottom: 4px;
+            font-size: 24px;
+            font-weight: 800;
+            background: linear-gradient(45deg, #f43f5e, #fb7185);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            font-size: 12px;
+            color: #64748b;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .canvas-container {
+            width: 100%;
+            margin-bottom: 22px;
+            background: #1b2032;
+            border-radius: 20px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 320px;
+            border: 1px dashed #374161;
+        }
+
+        canvas {
+            max-width: 100%;
+            max-height: 42vh;
+            display: block;
+            border-radius: 14px;
+            box-shadow: 0 15px 45px rgba(0,0,0,0.65);
+        }
+
+        /* 🎨 কালার অপশন প্যালেট (4 Color Options) */
+        .color-preset-panel {
+            margin-bottom: 18px;
+            text-align: left;
+        }
+
+        .section-label {
+            font-size: 11px;
+            color: #64748b;
+            text-transform: uppercase;
+            font-weight: 700;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .color-tab {
+            padding: 10px 4px;
+            background: #1f263b;
+            border: 1px solid #2e3959;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #94a3b8;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .color-tab:hover {
+            color: #fff;
+            border-color: #f43f5e;
+        }
+
+        .color-tab.active {
+            background: #f43f5e;
+            color: #ffffff;
+            border-color: #f43f5e;
+            box-shadow: 0 4px 12px rgba(244, 63, 94, 0.3);
+        }
+
+        /* 🗂️ কন্ট্রোল স্লাইডারস */
+        .control-panel {
+            background: #1a2033;
+            padding: 18px;
+            border-radius: 20px;
+            border: 1px solid #29324f;
+            margin-bottom: 22px;
+            text-align: left;
+        }
+
+        .slider-group {
+            margin-bottom: 16px;
+        }
+
+        .slider-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #94a3b8;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        .slider-label span {
+            color: #fb7185;
+            background: #28314f;
+            padding: 2px 8px;
+            border-radius: 6px;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 5px;
+            background: #2e3959;
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #f43f5e;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(244,63,94,0.5);
+        }
+
+        /* 🔘 বাটন গ্রুপ */
+        input[type="file"] {
+            display: none;
+        }
+
+        .upload-btn {
+            width: 100%;
+            padding: 14px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 16px;
+            cursor: pointer;
+            border: 1px dashed #475583;
+            background: #1b2032;
+            color: #cbd5e1;
+            transition: all 0.2s ease;
+            box-sizing: border-box;
+            display: block;
+            margin-bottom: 16px;
+        }
+
+        .upload-btn.loaded {
+            border-style: solid;
+            border-color: #f43f5e;
+            background: #241c26;
+            color: #fb7185;
+        }
+
+        .save-btn {
+            width: 100%;
+            padding: 15px 24px;
+            font-size: 16px;
+            font-weight: 700;
+            border-radius: 35px;
+            cursor: pointer;
+            border: none;
+            background: #f43f5e;
+            color: #ffffff;
+            box-shadow: 0 4px 25px rgba(244, 63, 94, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .save-btn:disabled {
+            background: #22293d !important;
+            color: #526085 !important;
+            box-shadow: none !important;
+            cursor: not-allowed;
+        }
+
+        .loader {
+            visibility: hidden;
+            color: #94a3b8;
+            font-size: 13px;
+            margin-top: 10px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Halftone Paper Art</h2>
+    <div class="subtitle">Vintage Print Photo Effect</div>
+    
+    <div class="canvas-container">
+        <canvas id="halftoneCanvas"></canvas>
+    </div>
+
+    <label class="upload-btn" id="uploadLabel">
+        <input type="file" id="imageLoader" accept="image/*"/>
+        📁 Upload Target Photo
+    </label>
+
+    <div class="color-preset-panel">
+        <div class="section-label">Select Color Option:</div>
+        <div class="color-grid">
+            <div class="color-tab active" id="c1" onclick="switchColor('rose', 'c1')">Rose Retro</div>
+            <div class="color-tab" id="c2" onclick="switchColor('sepia', 'c2')">Classic Sepia</div>
+            <div class="color-tab" id="c3" onclick="switchColor('mono', 'c3')">News Print</div>
+            <div class="color-tab" id="c4" onclick="switchColor('grunge', 'c4')">Dark Ink</div>
+        </div>
+    </div>
+
+    <div class="control-panel">
+        <div class="slider-group">
+            <div class="slider-label">
+                <label for="dotSizeSlider">Halftone Dot Core Size</label>
+                <span id="dotSizeVal">6</span>
+            </div>
+            <input type="range" id="dotSizeSlider" min="3" max="14" value="6" oninput="onParamChange()" disabled>
+        </div>
+
+        <div class="slider-group">
+            <div class="slider-label">
+                <label for="contrastSlider">Image Ink Contrast</label>
+                <span id="contrastVal">40</span>
+            </div>
+            <input type="range" id="contrastSlider" min="0" max="100" value="40" oninput="onParamChange()" disabled>
+        </div>
+
+        <div class="slider-group">
+            <div class="slider-label">
+                <label for="textureSlider">Paper Texture Overlay</label>
+                <span id="textureVal">35</span>
+            </div>
+            <input type="range" id="textureSlider" min="10" max="80" value="35" oninput="onParamChange()" disabled>
+        </div>
+    </div>
+
+    <button id="exportBtn" class="save-btn" onclick="downloadArt()" disabled>Export Halftone Artwork</button>
+    <div id="loadingText" class="loader">Generating mathematical point matrix...</div>
+</div>
+
+<script>
+    const canvas = document.getElementById('halftoneCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    let sourceImg = new Image();
+    let renderTimeout = null;
+    
+    // কালার কনফিগ অবজেক্ট (Paper Color & Dot/Ink Color)
+    let currentPalette = {
+        paper: '#ebdcd0', // উষ্ণ ভিন্টেজ ওল্ড পেপার বেস
+        ink: '#5a3d3c'    // রোজি চারকোল শেড
+    };
+
+    document.getElementById('imageLoader').addEventListener('change', (e) => {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            sourceImg.onload = function() {
+                document.getElementById('uploadLabel').classList.add('loaded');
+                document.getElementById('uploadLabel').innerText = '✓ Photo Imported Successfully';
+                
+                setupCanvasSize();
+                enableInterface();
+                processHalftoneArt();
+            }
+            sourceImg.src = event.target.result;
+        }
+        if(e.target.files[0]) reader.readAsDataURL(e.target.files[0]);
+    });
+
+    function setupCanvasSize() {
+        let w = sourceImg.width;
+        let h = sourceImg.height;
+        const targetMax = 800; // প্রফেশনাল মোবাইল রেন্ডারিং অপ্টিমাইজড সাইজ
+
+        if (w > targetMax || h > targetMax) {
+            if (w > h) { h = Math.round((h * targetMax) / w); w = targetMax; }
+            else { w = Math.round((w * targetMax) / h); h = targetMax; }
+        }
+        canvas.width = w;
+        canvas.height = h;
+    }
+
+    function enableInterface() {
+        document.getElementById('dotSizeSlider').disabled = false;
+        document.getElementById('contrastSlider').disabled = false;
+        document.getElementById('textureSlider').disabled = false;
+        document.getElementById('exportBtn').disabled = false;
+    }
+
+    function switchColor(theme, elementId) {
+        document.querySelectorAll('.color-tab').forEach(el => el.classList.remove('active'));
+        document.getElementById(elementId).classList.add('active');
+
+        if (theme === 'rose') {
+            currentPalette = { paper: '#ebdcd0', ink: '#513b3e' };
+        } else if (theme === 'sepia') {
+            currentPalette = { paper: '#ebd6b5', ink: '#432e1b' };
+        } else if (theme === 'mono') {
+            currentPalette = { paper: '#e3e4e6', ink: '#1a1b1f' };
+        } else if (theme === 'grunge') {
+            currentPalette = { paper: '#cbbba0', ink: '#242521' };
+        }
+
+        if (sourceImg.src) processHalftoneArt();
+    }
+
+    function onParamChange() {
+        document.getElementById('dotSizeVal').innerText = document.getElementById('dotSizeSlider').value;
+        document.getElementById('contrastVal').innerText = document.getElementById('contrastSlider').value;
+        document.getElementById('textureVal').innerText = document.getElementById('textureSlider').value;
+
+        if (!sourceImg.src) return;
+        document.getElementById('loadingText').style.visibility = 'visible';
+
+        clearTimeout(renderTimeout);
+        renderTimeout = setTimeout(() => {
+            processHalftoneArt();
+        }, 70);
+    }
+
+    // 🏎️ কোর গাণিতিক হাফটোন অ্যালগরিদম পাইপলাইন
+    function processHalftoneArt() {
+        const w = canvas.width;
+        const h = canvas.height;
+
+        const dotSpacing = parseInt(document.getElementById('dotSizeSlider').value);
+        const contrastAmt = parseInt(document.getElementById('contrastSlider').value);
+        const textureStrength = parseInt(document.getElementById('textureSlider').value) / 100;
+
+        // ১. ব্যাকগ্রাউন্ডে নিট পেপার কালার ফিলিং
+        ctx.fillStyle = currentPalette.paper;
+        ctx.fillRect(0, 0, w, h);
+
+        // ২. অফস্ক্রিন বাফারে ইমেজ প্রসেসিং ও গ্রে-স্কেল কনভার্সন
+        const bufferCanvas = document.createElement('canvas');
+        bufferCanvas.width = w; bufferCanvas.height = h;
+        const bCtx = bufferCanvas.getContext('2d');
+        bCtx.drawImage(sourceImg, 0, 0, w, h);
+
+        const imgData = bCtx.getImageData(0, 0, w, h);
+        const data = imgData.data;
+        const contrastFactor = (255 + contrastAmt) / (255 - contrastAmt);
+
+        // ৩. ডট ম্যাট্রিক্স জেনারেশন লুপ (Mathematical Dot Pitch Engine)
+        ctx.fillStyle = currentPalette.ink;
+        
+        // অ্যাঙ্গেল ও গ্রিড রোটেশন ইফেক্ট সিমুলেট করার জন্য ইন্টারনাল স্টেপিং ম্যাট্রিক্স
+        for (let y = 0; y < h; y += dotSpacing) {
+            for (let x = 0; x < w; x += dotSpacing) {
+                
+                // কেন্দ্রের পিক্সেল ইনডেক্স ক্যালকুলেশন
+                let pixelIndex = (Math.floor(y) * w + Math.floor(x)) * 4;
+                
+                if (pixelIndex < data.length) {
+                    let r = data[pixelIndex];
+                    let g = data[pixelIndex + 1];
+                    let b = data[pixelIndex + 2];
+
+                    // লুমিন্যান্স থিওরি অনুযায়ী নিখুঁত ব্রাইটনেস ডিটেকশন
+                    let brightness = 0.299 * r + 0.587 * g + 0.114 * b;
+
+                    // রিয়েলটাইম ইনক কনট্রাস্ট বুস্টিং
+                    brightness = contrastFactor * (brightness - 128) + 128;
+                    brightness = Math.max(0, Math.min(255, brightness));
+
+                    // ব্রাইটনেস যত কম হবে (ডার্ক এরিয়া), হাফটোন ডটের ব্যাসার্ধ তত বড় হবে
+                    let dotIntensity = 1.0 - (brightness / 255);
+
+                    if (dotIntensity > 0.04) {
+                        // ব্যাসার্ধ কখনো গ্রিড স্পেসিং এর বাইরে যাবে না
+                        let maxRadius = dotSpacing * 0.72;
+                        let calculatedRadius = maxRadius * dotIntensity;
+
+                        ctx.beginPath();
+                        // নিখুঁত গোলাকার ডট তৈরি
+                        ctx.arc(x + (dotSpacing/2), y + (dotSpacing/2), calculatedRadius, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+            }
+        }
+
+        // ৪. প্রফেশনাল ক্র্যাম্পলড পেপার ফাইবার জেনারেশন (Procedural Texture Engine)
+        // এটি কোনো এক্সটার্নাল ইমেজ ছাড়াই কাগজে ভাঁজ ও দানাদার ভাব ফুটিয়ে তোলে
+        let textureData = ctx.getImageData(0, 0, w, h);
+        let td = textureData.data;
+
+        for (let j = 0; j < td.length; j += 4) {
+            // পেরলিন নয়েজের অল্টারনেটিভ ফাস্ট ফ্রিকোয়েন্সি ম্যাথ
+            let nx = (j / 4) % w;
+            let ny = Math.floor((j / 4) / w);
+            
+            // ফাইবার ও ভাঁজের প্যাটার্ন সিমুলেশন গাণিতিক ইকুয়েশন
+            let noise = Math.sin(nx * 0.08) * Math.cos(ny * 0.08) * 12;
+            noise += Math.sin(nx * 0.3) * 6; // সুক্ষ্ম ফাইবার দানা
+            noise += (Math.random() - 0.5) * 15; // পেপার গ্রেইন
+
+            let finalModification = noise * textureStrength;
+
+            // পিক্সেল কালার মডিফিকেশন (কাগজের টেক্সচারের রিয়েল ভাইব দিতে)
+            td[j]     = Math.min(255, Math.max(0, td[j] + finalModification));
+            td[j + 1] = Math.min(255, Math.max(0, td[j + 1] + finalModification));
+            td[j + 2] = Math.min(255, Math.max(0, td[j + 2] + finalModification));
+        }
+        ctx.putImageData(textureData, 0, 0);
+
+        // ৫. ফাইনাল ভিন্টেজ পেপার ভাইনেট ওভারলে
+        let vignetteGradient = ctx.createRadialGradient(w/2, h/2, Math.max(w,h) * 0.3, w/2, h/2, Math.max(w,h) * 0.7);
+        vignetteGradient.addColorStop(0, 'rgba(0,0,0,0)');
+        vignetteGradient.addColorStop(1, 'rgba(40,30,20,0.18)'); // কাগজের চারধারে হালকা পোড়া ভাব
+        ctx.fillStyle = vignetteGradient;
+        ctx.fillRect(0, 0, w, h);
+
+        document.getElementById('loadingText').style.visibility = 'hidden';
+    }
+
+    function downloadArt() {
+        if (!sourceImg.src) return;
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.95);
+
+        const downloadLink = document.createElement('a');
+        downloadLink.download = 'shagor_halftone_paper_' + Date.now() + '.jpg';
+        downloadLink.href = dataUrl;
+        downloadLink.click();
+
+        // অ্যান্ড্রয়েড অ্যাপ ইন্টারফেস সাপোর্ট
+        if (window.AndroidInterface && window.AndroidInterface.saveToGallery) {
+            window.AndroidInterface.saveToGallery(dataUrl);
+        }
+    }
+</script>
+
+</body>
+</html>

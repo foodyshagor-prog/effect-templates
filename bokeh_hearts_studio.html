@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Shagor Photo Editor - Bokeh Hearts</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        /* Modern Mobile App Reset & Base */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body { 
+            background: #0d0d12; 
+            color: #ffffff; 
+            font-family: 'Poppins', sans-serif; 
+            display: flex; 
+            flex-direction: column; 
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* App Header */
+        .app-header {
+            padding: 20px;
+            text-align: center;
+            background: rgba(13, 13, 18, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 10;
+        }
+
+        .app-header h2 {
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            background: linear-gradient(45deg, #ff4757, #ff6b81);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Canvas Preview Area */
+        .preview-area {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            overflow: hidden;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #15151e;
+            border-radius: 20px;
+            border: 1px dashed #333;
+        }
+
+        canvas { 
+            max-width: 100%; 
+            max-height: 100%; 
+            border-radius: 12px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+            object-fit: contain;
+            display: none; 
+        }
+
+        .placeholder-text {
+            color: #666;
+            font-size: 14px;
+            position: absolute;
+            pointer-events: none;
+        }
+
+        /* Bottom Controls Sheet */
+        .bottom-sheet {
+            background: #1a1a24;
+            padding: 25px 20px;
+            border-radius: 30px 30px 0 0;
+            box-shadow: 0 -5px 25px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Custom File Input */
+        input[type="file"] {
+            display: none;
+        }
+
+        /* Slider Styling */
+        .slider-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: #aaa;
+            font-weight: 500;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 22px;
+            width: 22px;
+            border-radius: 50%;
+            background: #ff4757;
+            cursor: pointer;
+            margin-top: -9px;
+            box-shadow: 0 0 12px rgba(255, 71, 87, 0.6);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #333;
+            border-radius: 2px;
+        }
+
+        /* Action Buttons Grid - Updated for 2 buttons */
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .btn { 
+            padding: 14px; 
+            border-radius: 14px; 
+            border: none; 
+            font-size: 14px;
+            font-weight: 600;
+            font-family: 'Poppins', sans-serif;
+            cursor: pointer; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            transition: transform 0.1s ease;
+        }
+
+        .btn:active {
+            transform: scale(0.96);
+        }
+
+        .btn-upload { 
+            background: #2a2a36; 
+            color: #fff; 
+        }
+
+        .btn-save { 
+            background: linear-gradient(135deg, #ff4757, #ff6b81);
+            color: white; 
+            box-shadow: 0 4px 15px rgba(255, 71, 87, 0.3);
+        }
+
+        /* Icons (SVG) */
+        .icon {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-header">
+        <h2>Shagor Photo Editor</h2>
+    </div>
+
+    <div class="preview-area">
+        <div class="canvas-wrapper">
+            <span class="placeholder-text" id="placeholder">Upload an image to start</span>
+            <canvas id="bokehCanvas"></canvas>
+        </div>
+    </div>
+
+    <div class="bottom-sheet">
+        
+        <div class="slider-group">
+            <div class="slider-header">
+                <span>Heart Intensity</span>
+                <span id="intensityVal">40</span>
+            </div>
+            <input type="range" id="intensity" min="10" max="150" value="40">
+        </div>
+
+        <div class="action-buttons">
+            <input type="file" id="imageLoader" accept="image/*">
+            
+            <button class="btn btn-upload" onclick="document.getElementById('imageLoader').click()">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M19,13a1,1,0,0,0-1,1v.38L16.52,12.9a2.79,2.79,0,0,0-3.93,0l-.7.7L9.41,11.12a2.85,2.85,0,0,0-3.93,0L4,12.6V7A1,1,0,0,1,5,6h7a1,1,0,0,0,0-2H5A3,3,0,0,0,2,7V19a3,3,0,0,0,3,3H17a3,3,0,0,0,3-3V14A1,1,0,0,0,19,13ZM5,20a1,1,0,0,1-1-1V15.43l2.9-2.9a.79.79,0,0,1,1.09,0l3.17,3.17,0,0L15.46,20Zm13-1a.89.89,0,0,1-.18.53L13.31,15l.7-.7a.77.77,0,0,1,1.1,0L18,17.21ZM21.71,3.29a1,1,0,0,0-1.42,0L18,5.59l-2.29-2.3a1,1,0,0,0-1.42,1.42L16.59,7l-2.3,2.29a1,1,0,0,0,0,1.42,1,1,0,0,0,1.42,0L18,8.41l2.29,2.3a1,1,0,0,0,1.42,0,1,1,0,0,0,0-1.42L19.41,7l2.3-2.29A1,1,0,0,0,21.71,3.29Z"/></svg>
+                Upload Photo
+            </button>
+
+            <button class="btn btn-save" onclick="saveImage()">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M21,14a1,1,0,0,0-1,1v4a1,1,0,0,1-1,1H5a1,1,0,0,1-1-1V15a1,1,0,0,0-2,0v4a3,3,0,0,0,3,3H19a3,3,0,0,0,3-3V15A1,1,0,0,0,21,14Zm-9.71,1.71a1,1,0,0,0,.33.21.94.94,0,0,0,.76,0,1,1,0,0,0,.33-.21l4-4a1,1,0,0,0-1.42-1.42L13,12.59V3a1,1,0,0,0-2,0v9.59l-2.29-2.3a1,1,0,1,0-1.42,1.42Z"/></svg>
+                Save Photo
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('bokehCanvas');
+        const ctx = canvas.getContext('2d');
+        const placeholder = document.getElementById('placeholder');
+        const intensityInput = document.getElementById('intensity');
+        const intensityVal = document.getElementById('intensityVal');
+        let img = new Image();
+        let isImageLoaded = false;
+
+        // [New Update] Real-time effect auto-apply when slider is moved
+        intensityInput.addEventListener('input', (e) => {
+            intensityVal.textContent = e.target.value;
+            if (isImageLoaded) {
+                applyEffect(); // Automatically update canvas
+            }
+        });
+
+        // Load Image to Canvas
+        document.getElementById('imageLoader').onchange = (e) => {
+            if (!e.target.files[0]) return;
+            
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                img.onload = () => {
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    
+                    // Show canvas and hide placeholder
+                    canvas.style.display = 'block';
+                    placeholder.style.display = 'none';
+                    isImageLoaded = true;
+
+                    // [New Update] Automatically apply effect when image is first uploaded
+                    applyEffect(); 
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(e.target.files[0]);
+        };
+
+        // Draw Heart Shape Function
+        function drawHeart(ctx, x, y, size, color) {
+            ctx.fillStyle = color;
+            ctx.shadowColor = color;
+            ctx.shadowBlur = 15;
+            
+            ctx.beginPath();
+            ctx.moveTo(x, y + size / 4);
+            ctx.bezierCurveTo(x, y, x - size / 2, y, x - size / 2, y + size / 2);
+            ctx.bezierCurveTo(x - size / 2, y + size + size / 4, x, y + size + size / 2, x, y + size + size / 2);
+            ctx.bezierCurveTo(x, y + size + size / 2, x + size / 2, y + size + size / 4, x + size / 2, y + size / 2);
+            ctx.bezierCurveTo(x + size / 2, y, x, y, x, y + size / 4);
+            ctx.fill();
+            
+            ctx.shadowBlur = 0;
+        }
+
+        // Apply Bokeh Overlay
+        function applyEffect() {
+            if (!isImageLoaded) return;
+
+            // Reset image to original state before applying new hearts
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.drawImage(img, 0, 0); 
+            
+            const intensity = intensityInput.value;
+            
+            // Bokeh Effect Engine
+            ctx.globalCompositeOperation = 'screen';
+            
+            // Fixed random seed approach (Optional but helps): 
+            // In a simple web app, it will regenerate randomly on drag, giving a cool dynamic effect.
+            for(let i = 0; i < intensity; i++) {
+                const x = Math.random() * canvas.width;
+                const y = Math.random() * canvas.height;
+                
+                const baseSize = canvas.width * 0.05;
+                const size = (Math.random() * baseSize * 2) + baseSize; 
+                
+                const hue = 330 + Math.random() * 40; 
+                
+                ctx.globalAlpha = 0.2 + Math.random() * 0.5;
+                drawHeart(ctx, x, y, size, `hsla(${hue}, 100%, 65%, 0.8)`);
+            }
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.globalAlpha = 1.0;
+        }
+
+        // Save / Download Image Function
+        function saveImage() {
+            if (!isImageLoaded) {
+                alert("No image to save. Upload a photo first!");
+                return;
+            }
+            const dataURL = canvas.toDataURL("image/jpeg", 1.0);
+            const link = document.createElement("a");
+            link.download = "Shagor_Bokeh_Effect.jpg";
+            link.href = dataURL;
+            link.click();
+        }
+    </script>
+</body>
+</html>

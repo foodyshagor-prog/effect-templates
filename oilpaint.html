@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shagor Premium Fluid OilPaint FX</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #0b0b0d;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+            padding: 24px;
+            background: #141419;
+            border-radius: 24px;
+            box-shadow: 0 16px 40px rgba(0,0,0,0.6);
+            border: 1px solid #23232a;
+        }
+
+        h2 {
+            margin-bottom: 20px;
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            background: linear-gradient(45deg, #FF6B6B, #FFD93D);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            margin-bottom: 20px;
+            background: #1b1b22;
+            border-radius: 16px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 250px;
+            border: 1px solid #2d2d38;
+        }
+
+        canvas {
+            max-width: 100%;
+            max-height: 50vh;
+            display: block;
+            border-radius: 12px;
+        }
+
+        .seekbar-container {
+            margin: 15px 0 15px 0;
+            text-align: left;
+            background: #1b1b22;
+            padding: 14px 18px;
+            border-radius: 14px;
+            border: 1px solid #2d2d38;
+        }
+
+        .seekbar-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            color: #b0b0bc;
+            margin-bottom: 10px;
+        }
+
+        .seekbar-label span {
+            color: #FFD93D;
+            font-weight: bold;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: #333344;
+            border-radius: 5px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #FF6B6B, #FF9F43);
+            cursor: pointer;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.5);
+        }
+
+        input[type="range"]:disabled::-webkit-slider-thumb {
+            background: #555;
+            cursor: not-allowed;
+        }
+
+        .btn-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .custom-file-upload, .save-btn {
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 35px;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .custom-file-upload {
+            border: 1px solid #3d3d4e;
+            background: #22222b;
+            color: #fff;
+        }
+
+        .save-btn {
+            background: linear-gradient(45deg, #FF6B6B, #FF9F43);
+            color: white;
+            box-shadow: 0 4px 20px rgba(255, 107, 107, 0.4);
+        }
+
+        .save-btn:disabled {
+            background: #2a2a35 !important;
+            color: #666 !important;
+            box-shadow: none !important;
+            cursor: not-allowed;
+        }
+
+        .loader {
+            visibility: hidden;
+            color: #FFD93D;
+            font-size: 13px;
+            margin-top: 5px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>OilPaint FX Premium</h2>
+    
+    <div class="canvas-container">
+        <canvas id="photoCanvas"></canvas>
+    </div>
+
+    <div class="seekbar-container">
+        <div class="seekbar-label">
+            <label for="fxSlider">Paint Stroke Level</label>
+            <span id="fxVal">1</span>
+        </div>
+        <input type="range" id="fxSlider" min="1" max="6" value="1" oninput="onSliderDrag(this.value)" disabled>
+    </div>
+
+    <div class="btn-wrapper">
+        <label class="custom-file-upload">
+            <input type="file" id="imageLoader" accept="image/*"/>
+            Upload Image
+        </label>
+        
+        <button id="saveBtn" class="save-btn" onclick="saveProcessedImage()" disabled>Save Premium Painting</button>
+        <div id="loadingText" class="loader">Masterpiece is rendering...</div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('photoCanvas');
+    const ctx = canvas.getContext('2d');
+    const imageLoader = document.getElementById('imageLoader');
+    const fxSlider = document.getElementById('fxSlider');
+    const saveBtn = document.getElementById('saveBtn');
+    const loadingText = document.getElementById('loadingText');
+    let originalImage = new Image();
+    let sliderTimeout = null; 
+
+    imageLoader.addEventListener('change', handleImage, false);
+
+    function handleImage(e) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            originalImage.onload = function() {
+                // মোবাইল অপ্টিমাইজড প্রফেশনাল রেজোলিউশন
+                let targetWidth = originalImage.width;
+                let targetHeight = originalImage.height;
+                const maxDimension = 650;
+
+                if (targetWidth > maxDimension || targetHeight > maxDimension) {
+                    if (targetWidth > targetHeight) {
+                        targetHeight = Math.round((targetHeight * maxDimension) / targetWidth);
+                        targetWidth = maxDimension;
+                    } else {
+                        targetWidth = Math.round((targetWidth * maxDimension) / targetHeight);
+                    }
+                }
+
+                canvas.width = targetWidth;
+                canvas.height = targetHeight;
+                
+                fxSlider.disabled = false;
+                saveBtn.disabled = false; 
+                applyPremiumOilPaint();
+            }
+            originalImage.src = event.target.result;
+        }
+        if(e.target.files[0]) {
+            reader.readAsDataURL(e.target.files[0]);
+        }
+    }
+
+    function onSliderDrag(val) {
+        document.getElementById('fxVal').innerText = val;
+        if (!originalImage.src) return;
+
+        loadingText.style.visibility = 'visible';
+        saveBtn.disabled = true; 
+
+        clearTimeout(sliderTimeout);
+        sliderTimeout = setTimeout(() => {
+            applyPremiumOilPaint();
+        }, 80); 
+    }
+
+    // 🚀 স্মার্ট এজ-প্রিজারভিং অয়েল পেইন্ট পাইপলাইন
+    function applyPremiumOilPaint() {
+        if (!originalImage.src) return;
+
+        const width = canvas.width;
+        const height = canvas.height;
+
+        // ধাপ ১: মূল ছবি ড্র করা এবং কালার বুস্ট করা
+        ctx.drawImage(originalImage, 0, 0, width, height);
+        ctx.filter = "contrast(1.15) saturate(1.35) brightness(1.02)"; 
+        ctx.drawImage(canvas, 0, 0);
+        ctx.filter = "none"; 
+
+        const srcData = ctx.getImageData(0, 0, width, height);
+        const dstData = ctx.createImageData(width, height);
+        
+        const s = srcData.data;
+        const d = dstData.data;
+
+        const radius = parseInt(fxSlider.value);
+        
+        // তীব্রতা বা পোস্টারাইজেশন লেভেল বাড়ানো হয়েছে (৪৫) যাতে চারকোনা তালি ভাব দূর হয়
+        const intensityLevels = 45; 
+
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                const intensityCount = new Int32Array(intensityLevels + 1);
+                const sumR = new Float32Array(intensityLevels + 1);
+                const sumG = new Float32Array(intensityLevels + 1);
+                const sumB = new Float32Array(intensityLevels + 1);
+
+                for (let cy = -radius; cy <= radius; cy++) {
+                    const ny = y + cy;
+                    if (ny < 0 || ny >= height) continue;
+                    
+                    for (let cx = -radius; cx <= radius; cx++) {
+                        const nx = x + cx;
+                        if (nx < 0 || nx >= width) continue;
+
+                        const idx = (ny * width + nx) * 4;
+                        const r = s[idx];
+                        const g = s[idx + 1];
+                        const b = s[idx + 2];
+
+                        const curIntensity = Math.floor(((r + g + b) / 3) * intensityLevels / 255);
+                        
+                        intensityCount[curIntensity]++;
+                        sumR[curIntensity] += r;
+                        sumG[curIntensity] += g;
+                        sumB[curIntensity] += b;
+                    }
+                }
+
+                // সবচেয়ে বেশি ঘনত্বের শীর্ষ ২টি লেভেল ট্র্যাক করা (কালার তরল করার জন্য)
+                let maxCount1 = 0, maxLevel1 = 0;
+                let maxCount2 = 0, maxLevel2 = 0;
+
+                for (let i = 0; i <= intensityLevels; i++) {
+                    if (intensityCount[i] > maxCount1) {
+                        maxCount2 = maxCount1;
+                        maxLevel2 = maxLevel1;
+                        maxCount1 = intensityCount[i];
+                        maxLevel1 = i;
+                    } else if (intensityCount[i] > maxCount2) {
+                        maxCount2 = intensityCount[i];
+                        maxLevel2 = i;
+                    }
+                }
+
+                const outIdx = (y * width + x) * 4;
+                
+                // স্মার্ট ব্লেন্ড লজিক: ২টি সর্বোচ্চ কালার ক্লাস্টারকে একসাথে নরমভাবে মেশানো
+                let finalR = sumR[maxLevel1] / maxCount1;
+                let finalG = sumG[maxLevel1] / maxCount1;
+                let finalB = sumB[maxLevel1] / maxCount1;
+
+                if (maxCount2 > 0 && radius > 3) {
+                    const w2 = maxCount2 / (maxCount1 + maxCount2);
+                    const w1 = 1 - w2;
+                    finalR = (finalR * w1) + ((sumR[maxLevel2] / maxCount2) * w2);
+                    finalG = (finalG * w1) + ((sumG[maxLevel2] / maxCount2) * w2);
+                    finalB = (finalB * w1) + ((sumB[maxLevel2] / maxCount2) * w2);
+                }
+
+                // 🛡️ ফিচার গার্ড লজিক: অরিজিনাল মণির তীক্ষ্ণ ডিটেইলস ও শেপ বর্ডারকে ধরে রাখা
+                const origR = s[outIdx];
+                const origG = s[outIdx + 1];
+                const origB = s[outIdx + 2];
+                
+                // মূল পিক্সেলের সাথে পেইন্ট পিক্সেলের কনট্রাস্ট রেশিও দেখা
+                const diff = Math.abs((origR+origG+origB)/3 - (finalR+finalG+finalB)/3);
+                
+                if (diff > 45) { 
+                    // যেখানে হাই-কনট্রাস্ট ডিটেইল বা চোখের বর্ডার আছে, সেখানে ২০% অরিজিনাল শার্প স্ট্রাকচার প্রোটেকশন দেওয়া
+                    d[outIdx]     = Math.floor(finalR * 0.8 + origR * 0.2);
+                    d[outIdx + 1] = Math.floor(finalG * 0.8 + origG * 0.2);
+                    d[outIdx + 2] = Math.floor(finalB * 0.8 + origB * 0.2);
+                } else {
+                    d[outIdx]     = Math.floor(finalR);
+                    d[outIdx + 1] = Math.floor(finalG);
+                    d[outIdx + 2] = Math.floor(finalB);
+                }
+                d[outIdx + 3] = 255;
+            }
+        }
+
+        ctx.putImageData(dstData, 0, 0);
+
+        // ফাইনাল ফিনিশিং ফিল্টার: হালকা শার্পেন ও গ্লো এফেক্ট ব্লেন্ড করা
+        ctx.filter = "contrast(1.05) saturate(1.05)";
+        ctx.drawImage(canvas, 0, 0);
+        ctx.filter = "none";
+
+        loadingText.style.visibility = 'hidden';
+        saveBtn.disabled = false; 
+    }
+
+    function saveProcessedImage() {
+        if (!originalImage.src) return;
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.95);
+
+        const downloadLink = document.createElement('a');
+        downloadLink.download = 'shagor_premium_paint_' + Date.now() + '.jpg';
+        downloadLink.href = dataUrl;
+        downloadLink.click();
+
+        if (window.AndroidInterface && window.AndroidInterface.saveToGallery) {
+            window.AndroidInterface.saveToGallery(dataUrl);
+        }
+    }
+</script>
+
+</body>
+</html>

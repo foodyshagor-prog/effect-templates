@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Realistic Rain Art Studio</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        html, body {
+            min-height: 100%;
+            min-height: 100dvh;
+            background: #080c14;
+            color: #f1f5f9;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            overflow-y: auto;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            padding-top: env(safe-area-inset-top, 0px);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+
+        header {
+            padding: 16px;
+            text-align: center;
+            background: rgba(8, 12, 20, 0.7);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        header h1 {
+            font-size: 0.95rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #f8fafc;
+        }
+
+        header span {
+            display: block;
+            font-size: 0.7rem;
+            color: #5a6e85;
+            letter-spacing: 1px;
+            margin-top: 4px;
+        }
+
+        .workspace {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            min-height: 320px;
+        }
+
+        .canvas-container {
+            width: 100%;
+            max-width: 460px;
+            height: 360px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            border-radius: 24px;
+            overflow: hidden;
+            background: #03050a;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        canvas {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            border-radius: 12px;
+            display: none;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+        }
+
+        .placeholder {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+            cursor: pointer;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .placeholder .icon-box {
+            width: 64px;
+            height: 64px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+
+        .placeholder svg {
+            width: 32px;
+            height: 32px;
+            fill: #70859f;
+        }
+
+        .placeholder p {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #70859f;
+        }
+
+        .controls-panel {
+            background: #0d131f;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 20px 24px;
+            border-radius: 28px 28px 0 0;
+            margin-top: auto;
+        }
+
+        .slider-group {
+            margin-bottom: 16px;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: #70859f;
+            margin-bottom: 8px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .slider-label span.val {
+            color: #38bdf8;
+            background: rgba(56, 189, 248, 0.1);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-family: monospace;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: #1e293b;
+            border-radius: 2px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #ffffff;
+            box-shadow: 0 0 8px rgba(0,0,0,0.5);
+            cursor: pointer;
+            border: 2px solid #38bdf8;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1.3fr;
+            gap: 14px;
+            margin-top: 12px;
+        }
+
+        .btn {
+            font-family: inherit;
+            font-weight: 700;
+            font-size: 0.9rem;
+            height: 48px;
+            border: none;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-upload {
+            background: #1e293b;
+            color: #cbd5e1;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .btn-save {
+            background: #f8fafc;
+            color: #0f172a;
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        #file-input {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Cinematic Rain Studio</h1>
+        <span>REALISTIC WEATHER PHENOMENON ENGINE</span>
+    </header>
+
+    <div class="workspace">
+        <div class="canvas-container" id="drop-zone">
+            <div class="placeholder" id="placeholder">
+                <div class="icon-box">
+                    <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM19 18H6c-2.21 0-4-1.79-4-4 0-2.05 1.53-3.76 3.56-3.97l1.07-.11.5-.95C8.08 7.14 9.94 6 12 6c2.62 0 4.88 1.86 5.39 4.43l.3 1.5 1.53.11c1.56.1 2.78 1.41 2.78 2.96 0 1.65-1.35 3-3 3z"/></svg>
+                </div>
+                <p>Upload artwork background</p>
+            </div>
+            <canvas id="editorCanvas"></canvas>
+        </div>
+    </div>
+
+    <div class="controls-panel">
+        <div class="slider-group">
+            <div class="slider-label">
+                <span>Rain Storm Intensity</span>
+                <span class="val" id="val-density">Heavy</span>
+            </div>
+            <input type="range" id="slider-density" min="1" max="4" value="3" step="1">
+        </div>
+
+        <div class="slider-group">
+            <div class="slider-label">
+                <span>Wind Angle Slant</span>
+                <span class="val" id="val-angle">-8°</span>
+            </div>
+            <input type="range" id="slider-angle" min="-25" max="25" value="-8" step="1">
+        </div>
+
+        <div class="slider-group">
+            <div class="slider-label">
+                <span>Atmospheric Mist & Fog</span>
+                <span class="val" id="val-mist">45%</span>
+            </div>
+            <input type="range" id="slider-mist" min="0" max="100" value="45" step="5">
+        </div>
+
+        <div class="action-buttons">
+            <button class="btn btn-upload" id="btn-upload">New Image</button>
+            <button class="btn btn-save" id="btn-save">Export Artwork</button>
+        </div>
+    </div>
+
+    <input type="file" id="file-input" accept="image/*">
+
+    <script>
+        const canvas = document.getElementById('editorCanvas');
+        const ctx = canvas.getContext('2d');
+        const fileInput = document.getElementById('file-input');
+        const placeholder = document.getElementById('placeholder');
+        const dropZone = document.getElementById('drop-zone');
+        const btnUpload = document.getElementById('btn-upload');
+        const btnSave = document.getElementById('btn-save');
+
+        const sliderDensity = document.getElementById('slider-density');
+        const sliderAngle = document.getElementById('slider-angle');
+        const sliderMist = document.getElementById('slider-mist');
+
+        const valDensity = document.getElementById('val-density');
+        const valAngle = document.getElementById('val-angle');
+        const valMist = document.getElementById('val-mist');
+
+        let originalImage = null;
+        let rainSeeds = [];
+
+        sliderDensity.addEventListener('input', (e) => {
+            const labels = ['Drizzle', 'Moderate', 'Heavy', 'Torrential Downpour'];
+            valDensity.innerText = labels[e.target.value - 1];
+            renderRainPipeline();
+        });
+        sliderAngle.addEventListener('input', (e) => { valAngle.innerText = e.target.value + '°'; renderRainPipeline(); });
+        sliderMist.addEventListener('input', (e) => { valMist.innerText = e.target.value + '%'; renderRainPipeline(); });
+
+        btnUpload.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('click', () => { if(!originalImage) fileInput.click(); });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                originalImage = new Image();
+                originalImage.onload = () => {
+                    placeholder.style.display = 'none';
+                    canvas.style.display = 'block';
+                    setupCanvasDimensions();
+                    precalculateRainAssets();
+                    renderRainPipeline();
+                };
+                originalImage.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        function setupCanvasDimensions() {
+            const maxDimension = 700; // Optimal blueprint scaling factor
+            let width = originalImage.width;
+            let height = originalImage.height;
+
+            if (width > height && width > maxDimension) {
+                height = Math.round((height * maxDimension) / width);
+                width = maxDimension;
+            } else if (height > maxDimension) {
+                width = Math.round((width * maxDimension) / height);
+                height = maxDimension;
+            }
+            canvas.width = width;
+            canvas.height = height;
+        }
+
+        // Creates depth layers of rain tracks securely to change sliders instantly without jittering
+        function precalculateRainAssets() {
+            rainSeeds = [];
+            const absoluteMaxTrackCount = 1200;
+
+            for(let i = 0; i < absoluteMaxTrackCount; i++) {
+                // Layer properties: 1 = Background (fine), 2 = Midground, 3 = Foreground (large/fast)
+                let layer = 1;
+                const rand = Math.random();
+                if(rand > 0.65 && rand <= 0.92) layer = 2;
+                if(rand > 0.92) layer = 3;
+
+                let lengthBase = 12;
+                let speedAlpha = 0.15;
+                let thickness = 0.5;
+
+                if(layer === 2) { lengthBase = 32; speedAlpha = 0.35; thickness = 1.0; }
+                if(layer === 3) { lengthBase = 65; speedAlpha = 0.55; thickness = 1.6; }
+
+                rainSeeds.push({
+                    xRatio: Math.random() * 1.4 - 0.2, // pad horizontal edges for skewed wind vectors
+                    yRatio: Math.random(),
+                    length: lengthBase + (Math.random() * lengthBase * 0.5),
+                    alpha: speedAlpha + (Math.random() * 0.15),
+                    weight: thickness,
+                    depthLayer: layer
+                });
+            }
+        }
+
+        function renderRainPipeline() {
+            if (!originalImage) return;
+
+            const intensity = parseInt(sliderDensity.value);
+            const windAngleDeg = parseInt(sliderAngle.value);
+            const mistStrength = parseInt(sliderMist.value) / 100;
+
+            const radAngle = (windAngleDeg * Math.PI) / 180;
+            const dx = Math.sin(radAngle);
+            const dy = Math.cos(radAngle);
+
+            // 1. COMPLEX COLOR GRADING FILTER PASS (Emulates the cool-toned gloomy Photoshop action palette)
+            ctx.filter = 'brightness(0.85) contrast(1.12) saturate(0.68) hue-rotate(-8deg)';
+            ctx.drawImage(originalImage, 0, 0, canvas.width, canvas.height);
+            ctx.filter = 'none'; // reset native hardware context engine
+
+            // 2. EXTRA CINEMATIC COLOR TINT OVERLAY (Pulls cold blues into the highlights and shadows)
+            ctx.save();
+            ctx.globalCompositeOperation = 'color';
+            ctx.fillStyle = 'rgba(100, 140, 190, 0.24)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.restore();
+
+            // 3. ATMOSPHERIC MIST & FOG LAYER
+            if (mistStrength > 0) {
+                ctx.save();
+                ctx.globalCompositeOperation = 'screen';
+                
+                // Deep atmospheric soft overlay
+                let mistGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+                mistGrad.addColorStop(0, `rgba(180, 200, 220, ${mistStrength * 0.22})`);
+                mistGrad.addColorStop(0.5, `rgba(140, 165, 190, ${mistStrength * 0.15})`);
+                mistGrad.addColorStop(1, `rgba(100, 120, 140, ${mistStrength * 0.08})`);
+                ctx.fillStyle = mistGrad;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.restore();
+            }
+
+            // 4. MULTI-DEPTH DIRECTIONAL RAIN ENGINE
+            ctx.save();
+            ctx.lineCap = 'round';
+
+            // Filter out indices depending on density settings
+            let ceilingCap = rainSeeds.length;
+            if(intensity === 1) ceilingCap = rainSeeds.length * 0.25;
+            if(intensity === 2) ceilingCap = rainSeeds.length * 0.55;
+            if(intensity === 3) ceilingCap = rainSeeds.length * 0.82;
+
+            for (let i = 0; i < ceilingCap; i++) {
+                const drop = rainSeeds[i];
+                
+                const startX = drop.xRatio * canvas.width;
+                const startY = drop.yRatio * canvas.height;
+                
+                const endX = startX + (drop.length * dx);
+                const endY = startY + (drop.length * dy);
+
+                // Replicate camera depth blurring inside core loops
+                if(drop.depthLayer === 1) {
+                    ctx.strokeStyle = `rgba(230, 242, 255, ${drop.alpha * 0.6})`;
+                } else if(drop.depthLayer === 2) {
+                    ctx.strokeStyle = `rgba(240, 248, 255, ${drop.alpha * 0.85})`;
+                } else {
+                    // Foreground speed streaks slightly more transparent to mock camera motion blurs
+                    ctx.strokeStyle = `rgba(255, 255, 255, ${drop.alpha * 0.5})`;
+                }
+
+                ctx.lineWidth = drop.weight;
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+                ctx.lineTo(endX, endY);
+                ctx.stroke();
+            }
+            ctx.restore();
+
+            // 5. VIGNETTE BORDER FINISHER
+            ctx.save();
+            ctx.globalCompositeOperation = 'multiply';
+            let vignette = ctx.createRadialGradient(
+                canvas.width/2, canvas.height/2, Math.min(canvas.width, canvas.height) * 0.35,
+                canvas.width/2, canvas.height/2, Math.max(canvas.width, canvas.height) * 0.75
+            );
+            vignette.addColorStop(0, 'rgba(255, 255, 255, 1.0)');
+            vignette.addColorStop(0.6, 'rgba(180, 190, 205, 0.7)');
+            vignette.addColorStop(1, 'rgba(20, 25, 35, 1.0)');
+            ctx.fillStyle = vignette;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.restore();
+        }
+
+        btnSave.addEventListener('click', () => {
+            if (!originalImage) return;
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+            const link = document.createElement('a');
+            link.download = 'realistic_rain_artwork.jpg';
+            link.href = dataUrl;
+            link.click();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Two Color Dual-Light Studio</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        html, body {
+            min-height: 100%;
+            min-height: 100dvh;
+            background: #07090e;
+            color: #f1f5f9;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            overflow-y: auto;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            padding-top: env(safe-area-inset-top, 0px);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+
+        header {
+            padding: 16px;
+            text-align: center;
+            background: rgba(7, 9, 14, 0.8);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        header h1 {
+            font-size: 0.95rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #f8fafc;
+        }
+
+        header span {
+            display: block;
+            font-size: 0.65rem;
+            color: #94a3b8;
+            letter-spacing: 1.5px;
+            margin-top: 4px;
+            font-weight: 600;
+        }
+
+        .workspace {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            min-height: 320px;
+        }
+
+        .canvas-container {
+            width: 100%;
+            max-width: 460px;
+            height: 380px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            border-radius: 24px;
+            overflow: hidden;
+            background: #020306;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        canvas {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            border-radius: 12px;
+            display: none;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.95);
+        }
+
+        .placeholder {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #475569;
+            cursor: pointer;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .placeholder .icon-box {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(6, 182, 212, 0.1));
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+
+        .placeholder svg {
+            width: 32px;
+            height: 32px;
+            fill: #e2e8f0;
+            opacity: 0.6;
+        }
+
+        .placeholder p {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #94a3b8;
+        }
+
+        .controls-panel {
+            background: #0d111a;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 20px 24px;
+            border-radius: 28px 28px 0 0;
+            margin-top: auto;
+        }
+
+        .slider-group {
+            margin-bottom: 16px;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: #94a3b8;
+            margin-bottom: 8px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .slider-label .color-pickers {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .color-wrapper {
+            position: relative;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .color-wrapper input[type="color"] {
+            position: absolute;
+            top: -5px; left: -5px; width: 28px; height: 28px;
+            border: none; cursor: pointer;
+        }
+
+        .slider-label span.val {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-family: monospace;
+            color: #cbd5e1;
+        }
+
+        .slider-label span.val.left-glow {
+            color: #f87171;
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .slider-label span.val.right-glow {
+            color: #22d3ee;
+            background: rgba(6, 182, 212, 0.1);
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: #1e293b;
+            border-radius: 2px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #ffffff;
+            box-shadow: 0 0 8px rgba(0,0,0,0.5);
+            cursor: pointer;
+            border: 2px solid #475569;
+        }
+
+        #slider-left-intensity::-webkit-slider-thumb { border-color: #ef4444; }
+        #slider-right-intensity::-webkit-slider-thumb { border-color: #06b6d4; }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1.3fr;
+            gap: 14px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            font-family: inherit;
+            font-weight: 700;
+            font-size: 0.9rem;
+            height: 48px;
+            border: none;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-upload {
+            background: #1e293b;
+            color: #cbd5e1;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .btn-save {
+            background: #f8fafc;
+            color: #0f172a;
+            box-shadow: 0 4px 12px rgba(255,255,255,0.05);
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        #file-input {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Two-Color Lighting Studio</h1>
+        <span>GEL PHOTOGRAPHY EMULATION CORE</span>
+    </header>
+
+    <div class="workspace">
+        <div class="canvas-container" id="drop-zone">
+            <div class="placeholder" id="placeholder">
+                <div class="icon-box">
+                    <svg viewBox="0 0 24 24"><path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm-1-17.938A8.001 8.001 0 0 0 4.062 11H11V4.062zm2 0V11h6.938A8.001 8.001 0 0 0 13 4.062zM19.938 13H13v6.938a8.001 8.001 0 0 0 6.938-6.938zM11 19.938V13H4.062A8.001 8.001 0 0 0 11 19.938z"/></svg>
+                </div>
+                <p>Upload base photo</p>
+            </div>
+            <canvas id="editorCanvas"></canvas>
+        </div>
+    </div>
+
+    <div class="controls-panel">
+        <div class="slider-group">
+            <div class="slider-label">
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <span>Left Gel Color</span>
+                    <div class="color-wrapper"><input type="color" id="color-left" value="#ff1e00"></div>
+                </div>
+                <span class="val left-glow" id="val-left-intensity">75%</span>
+            </div>
+            <input type="range" id="slider-left-intensity" min="0" max="150" value="75" step="2">
+        </div>
+
+        <div class="slider-group">
+            <div class="slider-label">
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <span>Right Gel Color</span>
+                    <div class="color-wrapper"><input type="color" id="color-right" value="#00e5ff"></div>
+                </div>
+                <span class="val right-glow" id="val-right-intensity">75%</span>
+            </div>
+            <input type="range" id="slider-right-intensity" min="0" max="150" value="75" step="2">
+        </div>
+
+        <div class="slider-group">
+            <div class="slider-label">
+                <span>Light Spread & Falloff</span>
+                <span class="val" id="val-spread">40%</span>
+            </div>
+            <input type="range" id="slider-spread" min="15" max="85" value="40" step="1">
+        </div>
+
+        <div class="slider-group">
+            <div class="slider-label">
+                <span>Ambient Studio Shadow</span>
+                <span class="val" id="val-shadow">45%</span>
+            </div>
+            <input type="range" id="slider-shadow" min="10" max="80" value="45" step="2">
+        </div>
+
+        <div class="action-buttons">
+            <button class="btn btn-upload" id="btn-upload">New Photo</button>
+            <button class="btn btn-save" id="btn-save">Save Composition</button>
+        </div>
+    </div>
+
+    <input type="file" id="file-input" accept="image/*">
+
+    <script>
+        const canvas = document.getElementById('editorCanvas');
+        const ctx = canvas.getContext('2d');
+        const fileInput = document.getElementById('file-input');
+        const placeholder = document.getElementById('placeholder');
+        const dropZone = document.getElementById('drop-zone');
+        const btnUpload = document.getElementById('btn-upload');
+        const btnSave = document.getElementById('btn-save');
+
+        const sliderLeftInt = document.getElementById('slider-left-intensity');
+        const sliderRightInt = document.getElementById('slider-right-intensity');
+        const sliderSpread = document.getElementById('slider-spread');
+        const sliderShadow = document.getElementById('slider-shadow');
+        const colorLeft = document.getElementById('color-left');
+        const colorRight = document.getElementById('color-right');
+
+        const valLeftInt = document.getElementById('val-left-intensity');
+        const valRightInt = document.getElementById('val-right-intensity');
+        const valSpread = document.getElementById('val-spread');
+        const valShadow = document.getElementById('val-shadow');
+
+        let originalImage = null;
+
+        // UI Listeners
+        [sliderLeftInt, sliderRightInt, sliderSpread, sliderShadow].forEach(input => {
+            input.addEventListener('input', updateUIAndRender);
+        });
+        colorLeft.addEventListener('input', renderLightingPipeline);
+        colorRight.addEventListener('input', renderLightingPipeline);
+
+        btnUpload.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('click', () => { if(!originalImage) fileInput.click(); });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                originalImage = new Image();
+                originalImage.onload = () => {
+                    placeholder.style.display = 'none';
+                    canvas.style.display = 'block';
+                    setupCanvasDimensions();
+                    renderLightingPipeline();
+                };
+                originalImage.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        function updateUIAndRender() {
+            valLeftInt.innerText = sliderLeftInt.value + '%';
+            valRightInt.innerText = sliderRightInt.value + '%';
+            valSpread.innerText = sliderSpread.value + '%';
+            valShadow.innerText = sliderShadow.value + '%';
+            renderLightingPipeline();
+        }
+
+        function setupCanvasDimensions() {
+            const maxDimension = 720;
+            let width = originalImage.width;
+            let height = originalImage.height;
+
+            if (width > height && width > maxDimension) {
+                height = Math.round((height * maxDimension) / width);
+                width = maxDimension;
+            } else if (height > maxDimension) {
+                width = Math.round((width * maxDimension) / height);
+                height = maxDimension;
+            }
+            canvas.width = width;
+            canvas.height = height;
+        }
+
+        function renderLightingPipeline() {
+            if (!originalImage) return;
+
+            const leftPower = parseInt(sliderLeftInt.value) / 100;
+            const rightPower = parseInt(sliderRightInt.value) / 100;
+            const spreadValue = parseInt(sliderSpread.value) / 100;
+            const shadowValue = 1 - (parseInt(sliderShadow.value) / 100);
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // ==========================================
+            // PASS 1: AMBIENT STUDIO BASE
+            // ==========================================
+            // Darkens background elements while intensifying midtone contrasts to mimic a dark photography studio
+            ctx.filter = `brightness(${shadowValue * 0.95}) contrast(1.25) saturate(0.85)`;
+            ctx.drawImage(originalImage, 0, 0, canvas.width, canvas.height);
+            ctx.filter = 'none';
+
+            // ==========================================
+            // PASS 2: LEFT CHROMATIC LIGHTING GEL
+            // ==========================================
+            if (leftPower > 0) {
+                ctx.save();
+                ctx.globalCompositeOperation = 'screen';
+                
+                // Calculates a dynamic linear light projection across the horizontal axis
+                let leftGrad = ctx.createLinearGradient(0, 0, canvas.width * spreadValue * 1.5, 0);
+                leftGrad.addColorStop(0, hexToRgba(colorLeft.value, 0.7 * leftPower));
+                leftGrad.addColorStop(0.5, hexToRgba(colorLeft.value, 0.25 * leftPower));
+                leftGrad.addColorStop(1, 'rgba(0,0,0,0)');
+                
+                ctx.fillStyle = leftGrad;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.restore();
+            }
+
+            // ==========================================
+            // PASS 3: RIGHT CHROMATIC LIGHTING GEL
+            // ==========================================
+            if (rightPower > 0) {
+                ctx.save();
+                ctx.globalCompositeOperation = 'screen';
+                
+                // Mirror-project the opposing color channel from the right perimeter inward
+                let rightGrad = ctx.createLinearGradient(canvas.width, 0, canvas.width * (1 - (spreadValue * 1.5)), 0);
+                rightGrad.addColorStop(0, hexToRgba(colorRight.value, 0.7 * rightPower));
+                rightGrad.addColorStop(0.5, hexToRgba(colorRight.value, 0.25 * rightPower));
+                rightGrad.addColorStop(1, 'rgba(0,0,0,0)');
+                
+                ctx.fillStyle = rightGrad;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.restore();
+            }
+
+            // ==========================================
+            // PASS 4: SOFT COMPOSITE VIGNETTE
+            // ==========================================
+            ctx.save();
+            ctx.globalCompositeOperation = 'multiply';
+            let vignette = ctx.createRadialGradient(
+                canvas.width / 2, canvas.height / 2, Math.min(canvas.width, canvas.height) * 0.4,
+                canvas.width / 2, canvas.height / 2, Math.max(canvas.width, canvas.height) * 0.85
+            );
+            vignette.addColorStop(0, 'rgba(255, 255, 255, 1.0)');
+            vignette.addColorStop(0.65, 'rgba(180, 180, 190, 0.85)');
+            vignette.addColorStop(1, 'rgba(15, 18, 28, 1.0)');
+            
+            ctx.fillStyle = vignette;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.restore();
+        }
+
+        function hexToRgba(hex, alpha) {
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+
+        btnSave.addEventListener('click', () => {
+            if (!originalImage) return;
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+            const link = document.createElement('a');
+            link.download = 'two_color_lighting_artwork.jpg';
+            link.href = dataUrl;
+            link.click();
+        });
+    </script>
+</body>
+</html>

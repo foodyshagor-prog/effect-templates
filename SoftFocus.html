@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <title>Soft Focus Studio · dreamy glow effect</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      min-height: 100vh;
+      background: radial-gradient(circle at 30% 10%, #10121e, #010104);
+      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+    }
+
+    /* main card – modern frosted container */
+    .soft-focus-studio {
+      max-width: 560px;
+      width: 100%;
+      background: rgba(12, 14, 24, 0.75);
+      backdrop-filter: blur(12px);
+      border-radius: 2.5rem;
+      box-shadow: 0 30px 50px -20px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 245, 200, 0.12);
+      overflow: hidden;
+      transition: all 0.2s ease;
+    }
+
+    /* header area */
+    .effect-header {
+      padding: 1.4rem 1.5rem 0.5rem;
+      text-align: center;
+    }
+    .effect-header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: linear-gradient(130deg, #FFF2DD, #E7D6AE);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+    .effect-header p {
+      font-size: 0.72rem;
+      color: #b9b4d4;
+      margin-top: 6px;
+      font-weight: 450;
+      letter-spacing: 0.5px;
+    }
+
+    /* upload zone */
+    .upload-area {
+      margin: 1rem 1.2rem 0.6rem;
+      background: rgba(0, 0, 0, 0.35);
+      border-radius: 2rem;
+      border: 1px dashed rgba(220, 195, 130, 0.6);
+    }
+    .upload-trigger {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: rgba(20, 22, 36, 0.85);
+      backdrop-filter: blur(4px);
+      padding: 12px 16px;
+      border-radius: 2rem;
+      cursor: pointer;
+      transition: 0.2s;
+      width: 100%;
+      font-weight: 600;
+      color: #f3e7cf;
+      font-size: 0.95rem;
+      border: none;
+    }
+    .upload-trigger:active { background: #2e2c3e; transform: scale(0.97);}
+    input[type="file"] { display: none; }
+
+    /* canvas preview */
+    .preview-container {
+      margin: 0.7rem 1.2rem;
+      background: #03020a;
+      border-radius: 1.8rem;
+      box-shadow: 0 12px 28px -8px black;
+      padding: 8px;
+      border: 1px solid rgba(200, 175, 100, 0.25);
+    }
+    canvas {
+      width: 100%;
+      height: auto;
+      border-radius: 1.2rem;
+      display: block;
+      background: #151720;
+      cursor: pointer;
+    }
+    #softCanvas {
+      max-height: 52vh;
+      object-fit: contain;
+      width: auto;
+      margin: 0 auto;
+    }
+
+    /* control panel */
+    .controls-panel {
+      padding: 0.6rem 1.5rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.3rem;
+    }
+    .slider-unit {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .slider-unit label {
+      font-size: 0.72rem;
+      font-weight: 500;
+      letter-spacing: 0.6px;
+      color: #dbd6f0;
+      text-transform: uppercase;
+      display: flex;
+      justify-content: space-between;
+    }
+    .value-badge {
+      background: #00000066;
+      padding: 2px 10px;
+      border-radius: 40px;
+      font-size: 0.7rem;
+      font-family: monospace;
+      color: #ffecb3;
+    }
+    input[type="range"] {
+      width: 100%;
+      height: 4px;
+      -webkit-appearance: none;
+      background: #2c2a44;
+      border-radius: 10px;
+      outline: none;
+    }
+    input[type="range"]:focus { outline: none; }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      background: #ffdc8a;
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 0 8px #ffcd6a;
+      border: none;
+      transition: 0.05s linear;
+    }
+    input[type="range"]::-webkit-slider-thumb:active { transform: scale(1.2); }
+
+    /* preset buttons + save row */
+    .preset-row {
+      display: flex;
+      gap: 12px;
+      margin: 8px 0 4px;
+    }
+    .preset-btn {
+      flex: 1;
+      background: #242231;
+      border: 1px solid rgba(235, 205, 120, 0.5);
+      padding: 10px 0;
+      border-radius: 48px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #fff0cf;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.18s;
+      letter-spacing: 0.3px;
+    }
+    .preset-btn:active {
+      transform: scale(0.96);
+      background: #3b364f;
+    }
+    .save-btn {
+      background: linear-gradient(105deg, #1c1f30, #12141f);
+      border: 1px solid #ffea9e88;
+      padding: 12px 0;
+      border-radius: 60px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: #ffefca;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .save-btn:active { transform: scale(0.97); background: #2b2a40; }
+    .info-note {
+      font-size: 0.65rem;
+      text-align: center;
+      color: #9a96b9;
+      margin-top: 10px;
+    }
+
+    /* loading overlay */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(6px);
+      z-index: 300;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      visibility: hidden;
+      opacity: 0;
+      transition: 0.2s;
+    }
+    .loading-overlay.active {
+      visibility: visible;
+      opacity: 1;
+    }
+    .ring {
+      width: 50px;
+      height: 50px;
+      border: 4px solid rgba(255,225,140,0.3);
+      border-top: 4px solid #ffdd88;
+      border-radius: 50%;
+      animation: spinRing 0.8s infinite linear;
+    }
+    @keyframes spinRing { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<div class="soft-focus-studio">
+  <div class="effect-header">
+    <h1>✨ SOFT FOCUS ✨</h1>
+    <p>dreamy glow · photographic retainer</p>
+  </div>
+
+  <div class="upload-area">
+    <label class="upload-trigger" id="uploadBtn">
+      <span>🌸</span> <span>upload portrait / photo</span>
+    </label>
+    <input type="file" id="fileSelect" accept="image/jpeg, image/png, image/jpg, image/webp">
+  </div>
+
+  <div class="preview-container">
+    <canvas id="softCanvas" width="800" height="600" style="width:100%; height:auto; max-height:460px; aspect-ratio:auto"></canvas>
+  </div>
+
+  <div class="controls-panel">
+    <div class="slider-unit">
+      <label><span>✨ GLOW INTENSITY (dose)</span><span id="glowVal" class="value-badge">0.38</span></label>
+      <input type="range" id="glowStrength" min="0" max="0.9" step="0.01" value="0.38">
+    </div>
+    <div class="slider-unit">
+      <label><span>🌀 BLUR RADIUS (dream spread)</span><span id="blurVal" class="value-badge">12 px</span></label>
+      <input type="range" id="blurRadius" min="4" max="24" step="0.5" value="12">
+    </div>
+    <div class="slider-unit">
+      <label><span>☀️ BRIGHTNESS (exposure)</span><span id="expVal" class="value-badge">1.08</span></label>
+      <input type="range" id="exposure" min="0.75" max="1.45" step="0.01" value="1.08">
+    </div>
+    <div class="slider-unit">
+      <label><span>🔥 WARMTH / GOLDEN</span><span id="warmVal" class="value-badge">0.12</span></label>
+      <input type="range" id="warmth" min="-0.25" max="0.4" step="0.01" value="0.12">
+    </div>
+
+    <div class="preset-row">
+      <div class="preset-btn" id="presetSoft1">🌸 SOFT FOCUS 1<br><span style="font-size: 0.6rem;">20 doses · intense glow</span></div>
+      <div class="preset-btn" id="presetSoft2">✨ SOFT FOCUS 2<br><span style="font-size: 0.6rem;">1 dose · ethereal hint</span></div>
+    </div>
+
+    <button class="save-btn" id="saveSoftBtn">💾 SAVE SOFT FOCUS IMAGE</button>
+    <div class="info-note">⸻ soft bloom + golden warmth ⸻</div>
+  </div>
+</div>
+
+<div class="loading-overlay" id="loadingRing"><div class="ring"></div></div>
+
+<script>
+  (function(){
+    // DOM elements
+    const fileInput = document.getElementById('fileSelect');
+    const mainCanvas = document.getElementById('softCanvas');
+    const ctx = mainCanvas.getContext('2d');
+    const glowSlider = document.getElementById('glowStrength');
+    const blurSlider = document.getElementById('blurRadius');
+    const exposureSlider = document.getElementById('exposure');
+    const warmthSlider = document.getElementById('warmth');
+    const glowVal = document.getElementById('glowVal');
+    const blurVal = document.getElementById('blurVal');
+    const expVal = document.getElementById('expVal');
+    const warmVal = document.getElementById('warmVal');
+    const saveBtn = document.getElementById('saveSoftBtn');
+    const loadingOverlay = document.getElementById('loadingRing');
+    const preset1 = document.getElementById('presetSoft1');
+    const preset2 = document.getElementById('presetSoft2');
+
+    // image data store
+    let originalImageData = null;      // ImageData of original (RGBA)
+    let imgWidth = 0, imgHeight = 0;
+    let originalImageElement = null;    // keep HTMLImageElement for re-blur generation
+    let currentBlurRadius = 12;
+    let processing = false;
+    let pendingUpdate = false;
+
+    // helper: show/hide loader
+    function setLoading(state) {
+      if(state) loadingOverlay.classList.add('active');
+      else loadingOverlay.classList.remove('active');
+    }
+
+    // update display values
+    function updateLabels() {
+      glowVal.innerText = parseFloat(glowSlider.value).toFixed(2);
+      blurVal.innerText = Math.round(blurSlider.value) + ' px';
+      expVal.innerText = parseFloat(exposureSlider.value).toFixed(2);
+      warmVal.innerText = parseFloat(warmthSlider.value).toFixed(2);
+    }
+
+    // load image from upload
+    function handleImageFile(file) {
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          // resize for performance (max width 1100px, keep ratio)
+          let maxDim = 1100;
+          let ratio = img.width / img.height;
+          let targetW = img.width;
+          let targetH = img.height;
+          if(targetW > maxDim) {
+            targetW = maxDim;
+            targetH = Math.floor(maxDim / ratio);
+          }
+          if(targetH > maxDim && targetW <= maxDim) {
+            targetH = maxDim;
+            targetW = Math.floor(maxDim * ratio);
+          }
+          imgWidth = targetW;
+          imgHeight = targetH;
+          mainCanvas.width = imgWidth;
+          mainCanvas.height = imgHeight;
+          // draw original scaled
+          ctx.drawImage(img, 0, 0, imgWidth, imgHeight);
+          const originalPixels = ctx.getImageData(0, 0, imgWidth, imgHeight);
+          originalImageData = originalPixels;  // keep copy
+          originalImageElement = img;           // keep for blur re-generation
+          // apply initial effect
+          applySoftFocusFull();
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // generate blurred imageData based on current blurRadius (uses canvas filter)
+    function getBlurredImageData(radius) {
+      if(!originalImageElement) return null;
+      // create offscreen canvas
+      const offCanvas = document.createElement('canvas');
+      offCanvas.width = imgWidth;
+      offCanvas.height = imgHeight;
+      const offCtx = offCanvas.getContext('2d');
+      // draw original image (not scaled again, because dimensions match)
+      offCtx.drawImage(originalImageElement, 0, 0, imgWidth, imgHeight);
+      // apply blur filter
+      offCtx.filter = `blur(${radius}px)`;
+      offCtx.drawImage(offCanvas, 0, 0);
+      offCtx.filter = 'none';
+      return offCtx.getImageData(0, 0, imgWidth, imgHeight);
+    }
+
+    // main soft focus composite: screen blend + exposure + saturation + warmth
+    function compositeSoftFocus(originalData, blurredData, glowIntensity, exposureVal, warmthVal, saturationBoost = 1.02) {
+      const w = imgWidth, h = imgHeight;
+      const src = originalData.data;
+      const blur = blurredData.data;
+      const out = new Uint8ClampedArray(w * h * 4);
+      
+      for (let i = 0; i < w * h; i++) {
+        const idx = i * 4;
+        let r_orig = src[idx];
+        let g_orig = src[idx+1];
+        let b_orig = src[idx+2];
+        
+        let r_blur = blur[idx];
+        let g_blur = blur[idx+1];
+        let b_blur = blur[idx+2];
+        
+        // Normalize to 0-1
+        let r0 = r_orig / 255;
+        let g0 = g_orig / 255;
+        let b0 = b_orig / 255;
+        let r1 = r_blur / 255;
+        let g1 = g_blur / 255;
+        let b1 = b_blur / 255;
+        
+        // Screen blending for the glow: result = 1 - (1-orig)*(1-blur*glowFactor)
+        let glowFactor = Math.min(0.95, glowIntensity);
+        let sr = 1 - (1 - r0) * (1 - r1 * glowFactor);
+        let sg = 1 - (1 - g0) * (1 - g1 * glowFactor);
+        let sb = 1 - (1 - b0) * (1 - b1 * glowFactor);
+        
+        // Apply exposure multiplier (brightness)
+        let r_final = sr * exposureVal;
+        let g_final = sg * exposureVal;
+        let b_final = sb * exposureVal;
+        
+        // Warmth adjustment: add red & green tint, reduce blue if warmth>0, else cool
+        if (warmthVal !== 0) {
+          if (warmthVal > 0) {
+            r_final += warmthVal * 0.22;
+            g_final += warmthVal * 0.12;
+            b_final -= warmthVal * 0.1;
+          } else {
+            r_final += warmthVal * 0.15;  // negative = cool
+            g_final += warmthVal * 0.05;
+            b_final -= warmthVal * 0.05;
+          }
+        }
+        
+        // Slight saturation preservation / subtle increase for dreamy look
+        const satFactor = 1.08;
+        let gray = 0.299 * r_final + 0.587 * g_final + 0.114 * b_final;
+        r_final = gray + (r_final - gray) * satFactor;
+        g_final = gray + (g_final - gray) * satFactor;
+        b_final = gray + (b_final - gray) * satFactor;
+        
+        // clamp final values
+        out[idx] = Math.min(255, Math.max(0, Math.floor(r_final * 255)));
+        out[idx+1] = Math.min(255, Math.max(0, Math.floor(g_final * 255)));
+        out[idx+2] = Math.min(255, Math.max(0, Math.floor(b_final * 255)));
+        out[idx+3] = 255;
+      }
+      return new ImageData(out, w, h);
+    }
+    
+    // main effect pipeline (async with debounce)
+    let effectTimer = null;
+    async function applySoftFocusFull() {
+      if (!originalImageData || !originalImageElement) return;
+      if (processing) {
+        pendingUpdate = true;
+        return;
+      }
+      processing = true;
+      setLoading(true);
+      
+      // capture current slider values
+      const glow = parseFloat(glowSlider.value);
+      const radius = parseFloat(blurSlider.value);
+      const exposure = parseFloat(exposureSlider.value);
+      const warmth = parseFloat(warmthSlider.value);
+      currentBlurRadius = radius;
+      
+      // defer processing to avoid blocking UI
+      setTimeout(() => {
+        try {
+          // generate fresh blurred image data
+          const blurredData = getBlurredImageData(radius);
+          if (!blurredData) {
+            setLoading(false);
+            processing = false;
+            return;
+          }
+          // composite
+          const finalImageData = compositeSoftFocus(originalImageData, blurredData, glow, exposure, warmth);
+          ctx.putImageData(finalImageData, 0, 0);
+        } catch(err) {
+          console.warn("Soft focus error", err);
+        } finally {
+          setLoading(false);
+          processing = false;
+          if (pendingUpdate) {
+            pendingUpdate = false;
+            applySoftFocusFull();
+          }
+        }
+      }, 20);
+    }
+    
+    // debounced trigger for sliders
+    function debouncedEffect() {
+      if (!originalImageData) return;
+      if (effectTimer) clearTimeout(effectTimer);
+      effectTimer = setTimeout(() => {
+        applySoftFocusFull();
+      }, 40);
+    }
+    
+    // presets: soft focus 1 (20 doses – intense glow, bigger blur, warmth rich)
+    function setPresetSoft1() {
+      if (!originalImageData) {
+        showToast("⛩️ Please upload an image first");
+        return;
+      }
+      glowSlider.value = "0.68";
+      blurSlider.value = "18";
+      exposureSlider.value = "1.18";
+      warmthSlider.value = "0.22";
+      updateLabels();
+      debouncedEffect();
+    }
+    
+    // preset soft focus 2 (1 dose – subtle ethereal, low glow, classic)
+    function setPresetSoft2() {
+      if (!originalImageData) {
+        showToast("📸 Load an image to apply soft focus");
+        return;
+      }
+      glowSlider.value = "0.28";
+      blurSlider.value = "10";
+      exposureSlider.value = "1.03";
+      warmthSlider.value = "0.06";
+      updateLabels();
+      debouncedEffect();
+    }
+    
+    // simple toast message (non-intrusive)
+    function showToast(msg) {
+      let toast = document.createElement('div');
+      toast.innerText = msg;
+      toast.style.position = 'fixed';
+      toast.style.bottom = '30px';
+      toast.style.left = '20px';
+      toast.style.right = '20px';
+      toast.style.background = '#1e1c2ee6';
+      toast.style.backdropFilter = 'blur(12px)';
+      toast.style.padding = '12px';
+      toast.style.borderRadius = '40px';
+      toast.style.textAlign = 'center';
+      toast.style.color = '#ffefcf';
+      toast.style.fontSize = '0.8rem';
+      toast.style.zIndex = '999';
+      toast.style.fontWeight = '500';
+      toast.style.border = '1px solid #ffe0a3';
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 1800);
+    }
+    
+    // Save image
+    function saveImage() {
+      if (!originalImageData) {
+        showToast("✨ No image loaded — please upload a photo");
+        return;
+      }
+      try {
+        const link = document.createElement('a');
+        link.download = 'soft_focus_masterpiece.png';
+        link.href = mainCanvas.toDataURL('image/png');
+        link.click();
+      } catch(e) {
+        showToast("⚠️ Cannot save, try again");
+      }
+    }
+    
+    // attach events
+    function bindEvents() {
+      fileInput.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files[0]) {
+          handleImageFile(e.target.files[0]);
+        }
+      });
+      document.getElementById('uploadBtn').addEventListener('click', () => fileInput.click());
+      
+      glowSlider.addEventListener('input', () => {
+        updateLabels();
+        debouncedEffect();
+      });
+      blurSlider.addEventListener('input', () => {
+        updateLabels();
+        debouncedEffect();
+      });
+      exposureSlider.addEventListener('input', () => {
+        updateLabels();
+        debouncedEffect();
+      });
+      warmthSlider.addEventListener('input', () => {
+        updateLabels();
+        debouncedEffect();
+      });
+      
+      preset1.addEventListener('click', setPresetSoft1);
+      preset2.addEventListener('click', setPresetSoft2);
+      saveBtn.addEventListener('click', saveImage);
+      
+      updateLabels();
+    }
+    
+    // initial canvas state
+    ctx.fillStyle = '#14161f';
+    ctx.fillRect(0, 0, mainCanvas.width, mainCanvas.height);
+    bindEvents();
+    
+    // optional demo placeholder text (if no image)
+    function drawPlaceholder() {
+      if (!originalImageData && mainCanvas.width > 0) {
+        ctx.font = "12px 'Inter'";
+        ctx.fillStyle = "#ffffff80";
+        ctx.fillText("upload image → soft focus bloom", 30, mainCanvas.height/2);
+      }
+    }
+    setTimeout(() => { if(!originalImageData) drawPlaceholder(); }, 100);
+  })();
+</script>
+</body>
+</html>

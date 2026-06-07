@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Soft Focus Art Studio</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        html, body {
+            min-height: 100%;
+            min-height: 100dvh;
+            background: #06080c;
+            color: #f1f5f9;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            overflow-y: auto;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            padding-top: env(safe-area-inset-top, 0px);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+
+        header {
+            padding: 16px;
+            text-align: center;
+            background: rgba(6, 8, 12, 0.7);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        header h1 {
+            font-size: 0.95rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #f8fafc;
+        }
+
+        header span {
+            display: block;
+            font-size: 0.7rem;
+            color: #64748b;
+            letter-spacing: 1px;
+            margin-top: 4px;
+        }
+
+        .workspace {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            min-height: 320px;
+        }
+
+        .canvas-container {
+            width: 100%;
+            max-width: 450px;
+            height: 360px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            border-radius: 24px;
+            overflow: hidden;
+            background: #020406;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            box-shadow: inset 0 0 40px rgba(0,0,0,0.9);
+        }
+
+        canvas {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            border-radius: 12px;
+            display: none;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+        }
+
+        .placeholder {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+            cursor: pointer;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .placeholder .icon-box {
+            width: 64px;
+            height: 64px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+
+        .placeholder svg {
+            width: 32px;
+            height: 32px;
+            fill: #94a3b8;
+        }
+
+        .placeholder p {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #94a3b8;
+        }
+
+        .controls-panel {
+            background: #0b0f17;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 20px 24px;
+            border-radius: 28px 28px 0 0;
+            margin-top: auto;
+        }
+
+        .slider-group {
+            margin-bottom: 16px;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: #94a3b8;
+            margin-bottom: 8px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .slider-label span.val {
+            color: #38bdf8;
+            background: rgba(56, 189, 248, 0.1);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-family: monospace;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: #1e293b;
+            border-radius: 2px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #ffffff;
+            box-shadow: 0 0 8px rgba(0,0,0,0.5);
+            cursor: pointer;
+            border: 2px solid #38bdf8;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1.3fr;
+            gap: 14px;
+            margin-top: 12px;
+        }
+
+        .btn {
+            font-family: inherit;
+            font-weight: 700;
+            font-size: 0.9rem;
+            height: 48px;
+            border: none;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-upload {
+            background: #1e293b;
+            color: #cbd5e1;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .btn-save {
+            background: #f8fafc;
+            color: #0f172a;
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        #file-input {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Soft Focus Art Studio</h1>
+        <span>CREATIVE PHOTOSHOP ACTION EMULATOR</span>
+    </header>
+
+    <div class="workspace">
+        <div class="canvas-container" id="drop-zone">
+            <div class="placeholder" id="placeholder">
+                <div class="icon-box">
+                    <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 16H6c-.55 0-1-.45-1-1V6c0-.55.45-1 1-1h12c.55 0 1 .45 1 1v12c0 .55-.45 1-1 1zm-4.44-6.19l-2.34 3.03-1.67-2.01L6.5 17h11l-3.94-5.19z"/></svg>
+                </div>
+                <p>Upload your portrait image</p>
+            </div>
+            <canvas id="editorCanvas"></canvas>
+        </div>
+    </div>
+
+    <div class="controls-panel">
+        <div class="slider-group">
+            <div class="slider-label">
+                <span>Glow & Aura Radius</span>
+                <span class="val" id="val-blur">40px</span>
+            </div>
+            <input type="range" id="slider-blur" min="15" max="80" value="40" step="1">
+        </div>
+
+        <div class="slider-group">
+            <div class="slider-label">
+                <span>Color Saturation Boost</span>
+                <span class="val" id="val-glow">1.4x</span>
+            </div>
+            <input type="range" id="slider-glow" min="1.0" max="2.2" value="1.4" step="0.1">
+        </div>
+
+        <div class="slider-group">
+            <div class="slider-label">
+                <span>Magical Dust Density</span>
+                <span class="val" id="val-dust">Medium</span>
+            </div>
+            <input type="range" id="slider-dust" min="0" max="3" value="2" step="1">
+        </div>
+
+        <div class="action-buttons">
+            <button class="btn btn-upload" id="btn-upload">New Image</button>
+            <button class="btn btn-save" id="btn-save">Export Artwork</button>
+        </div>
+    </div>
+
+    <input type="file" id="file-input" accept="image/*">
+
+    <script>
+        const canvas = document.getElementById('editorCanvas');
+        const ctx = canvas.getContext('2d');
+        const fileInput = document.getElementById('file-input');
+        const placeholder = document.getElementById('placeholder');
+        const dropZone = document.getElementById('drop-zone');
+        const btnUpload = document.getElementById('btn-upload');
+        const btnSave = document.getElementById('btn-save');
+
+        const sliderBlur = document.getElementById('slider-blur');
+        const sliderGlow = document.getElementById('slider-glow');
+        const sliderDust = document.getElementById('slider-dust');
+
+        const valBlur = document.getElementById('val-blur');
+        const valGlow = document.getElementById('val-glow');
+        const valDust = document.getElementById('val-dust');
+
+        let originalImage = null;
+        let particleSeed = [];
+
+        sliderBlur.addEventListener('input', (e) => { valBlur.innerText = e.target.value + 'px'; renderSoftFocusEffect(); });
+        sliderGlow.addEventListener('input', (e) => { valGlow.innerText = e.target.value + 'x'; renderSoftFocusEffect(); });
+        sliderDust.addEventListener('input', (e) => {
+            const dustLabels = ['None', 'Sparse', 'Medium', 'Heavy Dust'];
+            valDust.innerText = dustLabels[e.target.value];
+            renderSoftFocusEffect();
+        });
+
+        btnUpload.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('click', () => { if(!originalImage) fileInput.click(); });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                originalImage = new Image();
+                originalImage.onload = () => {
+                    placeholder.style.display = 'none';
+                    canvas.style.display = 'block';
+                    setupCanvasDimensions();
+                    generateStaticParticles();
+                    renderSoftFocusEffect();
+                };
+                originalImage.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        function setupCanvasDimensions() {
+            const maxDimension = 650; // High resolution standard matching pro-renders
+            let width = originalImage.width;
+            let height = originalImage.height;
+
+            if (width > height && width > maxDimension) {
+                height = Math.round((height * maxDimension) / width);
+                width = maxDimension;
+            } else if (height > maxDimension) {
+                width = Math.round((width * maxDimension) / height);
+                height = maxDimension;
+            }
+            canvas.width = width;
+            canvas.height = height;
+        }
+
+        // Pre-calculates an organic, clustered layout of stars/dust particles so they stay fixed when tweaking sliders
+        function generateStaticParticles() {
+            particleSeed = [];
+            const count = 350; 
+            for(let i = 0; i < count; i++) {
+                particleSeed.push({
+                    x: Math.random(),
+                    y: Math.random(),
+                    size: Math.random() * 2.5 + 0.5,
+                    alpha: Math.random() * 0.6 + 0.2,
+                    blur: Math.random() > 0.75
+                });
+            }
+        }
+
+        function renderSoftFocusEffect() {
+            if (!originalImage) return;
+
+            const blurVal = parseInt(sliderBlur.value);
+            const glowVal = parseFloat(sliderGlow.value);
+            const dustSetting = parseInt(sliderDust.value);
+
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+            const maxRadius = Math.min(canvas.width, canvas.height);
+
+            // 1. BASE BACKGROUND LAYER: Deep rich dark backplate
+            ctx.filter = 'none';
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.fillStyle = "#030407"; 
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 2. LAYER 2: The Color Bleed Aura (GPU-Accelerated)
+            ctx.save();
+            ctx.filter = `blur(${blurVal}px) brightness(1.1) contrast(1.2) saturate(${glowVal * 1.3})`;
+            ctx.globalAlpha = 0.85;
+            ctx.drawImage(originalImage, 0, 0, canvas.width, canvas.height);
+            ctx.restore();
+
+            // 3. LAYER 3: Ambient Volumetric Cloud overlay
+            ctx.save();
+            ctx.globalCompositeOperation = 'screen';
+            let cloudGrad = ctx.createRadialGradient(cx, cy, maxRadius * 0.1, cx, cy, maxRadius * 0.6);
+            cloudGrad.addColorStop(0, `rgba(255, 255, 255, ${0.08 * glowVal})`);
+            cloudGrad.addColorStop(0.5, `rgba(100, 150, 255, ${0.04 * glowVal})`);
+            cloudGrad.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = cloudGrad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.restore();
+
+            // 4. LAYER 4: Masked Foreground Core (Face & Subject focus point stays pin-sharp)
+            ctx.save();
+            let maskCanvas = document.createElement('canvas');
+            maskCanvas.width = canvas.width;
+            maskCanvas.height = canvas.height;
+            let mCtx = maskCanvas.getContext('2d');
+
+            // Draw sharp image on secondary virtual buffer
+            mCtx.drawImage(originalImage, 0, 0, canvas.width, canvas.height);
+            mCtx.globalCompositeOperation = 'destination-in';
+
+            // Radical falloff gradient centered perfectly on target subject
+            let focusGrad = mCtx.createRadialGradient(cx, cy - (canvas.height * 0.05), maxRadius * 0.15, cx, cy, maxRadius * 0.48);
+            focusGrad.addColorStop(0, 'rgba(0, 0, 0, 1.0)');
+            focusGrad.addColorStop(0.35, 'rgba(0, 0, 0, 0.85)');
+            focusGrad.addColorStop(0.7, 'rgba(0, 0, 0, 0.2)');
+            focusGrad.addColorStop(1, 'rgba(0, 0, 0, 0.0)');
+            
+            mCtx.fillStyle = focusGrad;
+            mCtx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Layer sharp focus core onto final canvas assembly with rich studio styling properties
+            ctx.filter = `contrast(1.08) saturate(${glowVal})`;
+            ctx.drawImage(maskCanvas, 0, 0);
+            ctx.restore();
+
+            // 5. LAYER 5: Photo Action Dust Particle Engine
+            if (dustSetting > 0) {
+                ctx.save();
+                ctx.globalCompositeOperation = 'lighter';
+                
+                // Limit mapping range loop bounds based on user sliders dynamically
+                let displayCount = particleSeed.length;
+                if (dustSetting === 1) displayCount = particleSeed.length * 0.3;
+                if (dustSetting === 2) displayCount = particleSeed.length * 0.65;
+
+                for (let i = 0; i < displayCount; i++) {
+                    const p = particleSeed[i];
+                    const px = p.x * canvas.width;
+                    const py = p.y * canvas.height;
+
+                    // Exclude center face area slightly to replicate true action masks
+                    const distToCenter = Math.hypot(px - cx, py - cy);
+                    if (distToCenter < maxRadius * 0.12) continue;
+
+                    if (p.blur) {
+                        ctx.filter = 'blur(1px)';
+                        ctx.fillStyle = `rgba(220, 235, 255, ${p.alpha * 0.4})`;
+                    } else {
+                        ctx.filter = 'none';
+                        ctx.fillStyle = `rgba(255, 255, 255, ${p.alpha * 0.85})`;
+                    }
+
+                    ctx.beginPath();
+                    ctx.arc(px, py, p.size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.restore();
+            }
+
+            // 6. LAYER 6: Heavy Cinematic Vignette Ring
+            ctx.save();
+            ctx.filter = 'none';
+            ctx.globalCompositeOperation = 'multiply';
+            let vignette = ctx.createRadialGradient(cx, cy, maxRadius * 0.25, cx, cy, maxRadius * 0.75);
+            vignette.addColorStop(0, 'rgba(255,255,255,1.0)');
+            vignette.addColorStop(0.6, 'rgba(30,30,40,0.4)');
+            vignette.addColorStop(1, 'rgba(0,0,0,1.0)');
+            ctx.fillStyle = vignette;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.restore();
+        }
+
+        btnSave.addEventListener('click', () => {
+            if (!originalImage) return;
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.96);
+            const link = document.createElement('a');
+            link.download = 'soft_focus_artwork.jpg';
+            link.href = dataUrl;
+            link.click();
+        });
+    </script>
+</body>
+</html>

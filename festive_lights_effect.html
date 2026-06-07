@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shagor Festive Lights Pro Studio</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #08090d;
+            color: #f3f4f6;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 95%;
+            max-width: 550px;
+            padding: 24px;
+            background: #11131e;
+            border-radius: 28px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.85);
+            border: 1px solid #23273a;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        h2 {
+            margin-top: 0;
+            margin-bottom: 4px;
+            font-size: 24px;
+            font-weight: 800;
+            background: linear-gradient(45deg, #fb923c, #f43f5e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            font-size: 11px;
+            color: #64748b;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .canvas-container {
+            width: 100%;
+            margin-bottom: 22px;
+            background: #171923;
+            border-radius: 20px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 320px;
+            border: 1px dashed #353b54;
+        }
+
+        canvas {
+            max-width: 100%;
+            max-height: 40vh;
+            display: block;
+            border-radius: 14px;
+            box-shadow: 0 15px 45px rgba(0,0,0,0.7);
+        }
+
+        /* 🛠️ কন্ট্রোল গ্রিড এবং অপশন ট্যাব */
+        .option-panel {
+            margin-bottom: 14px;
+            text-align: left;
+        }
+
+        .section-label {
+            font-size: 11px;
+            color: #64748b;
+            text-transform: uppercase;
+            font-weight: 700;
+            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+        }
+
+        .grid-4-col {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+        }
+
+        .tab-btn {
+            padding: 10px 2px;
+            background: #1a1d2e;
+            border: 1px solid #2b314d;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #94a3b8;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn:hover {
+            color: #fff;
+            border-color: #fb923c;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, #fb923c, #f43f5e);
+            color: #ffffff;
+            border-color: #fb923c;
+            box-shadow: 0 4px 10px rgba(251, 146, 60, 0.25);
+        }
+
+        /* 🗂️ স্লাইডার কন্ট্রোলস */
+        .control-panel {
+            background: #161924;
+            padding: 16px;
+            border-radius: 20px;
+            border: 1px solid #272c41;
+            margin-bottom: 22px;
+            text-align: left;
+        }
+
+        .slider-group {
+            margin-bottom: 14px;
+        }
+
+        .slider-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #94a3b8;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        .slider-label span {
+            color: #fdba74;
+            background: #252b3f;
+            padding: 2px 8px;
+            border-radius: 6px;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 5px;
+            background: #2a2f45;
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #fb923c;
+            cursor: pointer;
+        }
+
+        /* 🔘 অ্যাকশন বাটন */
+        input[type="file"] {
+            display: none;
+        }
+
+        .upload-btn {
+            width: 100%;
+            padding: 14px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 16px;
+            cursor: pointer;
+            border: 1px dashed #40496e;
+            background: #171a26;
+            color: #cbd5e1;
+            transition: all 0.2s ease;
+            box-sizing: border-box;
+            display: block;
+            margin-bottom: 14px;
+        }
+
+        .upload-btn.loaded {
+            border-style: solid;
+            border-color: #fb923c;
+            background: #231d24;
+            color: #fdba74;
+        }
+
+        .save-btn {
+            width: 100%;
+            padding: 15px 24px;
+            font-size: 16px;
+            font-weight: 700;
+            border-radius: 35px;
+            cursor: pointer;
+            border: none;
+            background: linear-gradient(90deg, #fb923c, #f43f5e);
+            color: #ffffff;
+            box-shadow: 0 4px 25px rgba(244, 63, 94, 0.35);
+            transition: all 0.3s ease;
+        }
+
+        .save-btn:disabled {
+            background: #202436 !important;
+            color: #4f5b7c !important;
+            box-shadow: none !important;
+            cursor: not-allowed;
+        }
+
+        .loader {
+            visibility: hidden;
+            color: #94a3b8;
+            font-size: 13px;
+            margin-top: 10px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Festive Lights Pro</h2>
+    <div class="subtitle">Multi-Shape Custom Overlay Engine</div>
+    
+    <div class="canvas-container">
+        <canvas id="festiveCanvas"></canvas>
+    </div>
+
+    <label class="upload-btn" id="uploadLabel">
+        <input type="file" id="imageLoader" accept="image/*"/>
+        ✨ Import Base Photo
+    </label>
+
+    <!-- 🔮 ১. লাইট শেপ অপশন প্যানেল (নতুন ফিচার) -->
+    <div class="option-panel">
+        <div class="section-label">1. Select Light Shape:</div>
+        <div class="grid-4-col">
+            <div class="tab-btn active" id="s_circle" onclick="switchShape('circle', 's_circle')">🟢 Circle</div>
+            <div class="tab-btn" id="s_hex" onclick="switchShape('hexagon', 's_hex')">⬡ Hexagon</div>
+            <div class="tab-btn" id="s_heart" onclick="switchShape('heart', 's_heart')">❤️ Heart</div>
+            <div class="tab-btn" id="s_star" onclick="switchShape('star', 's_star')">🌟 Star Burst</div>
+        </div>
+    </div>
+
+    <!-- 🎨 ২. উৎসবের কালার থিম প্যানেল -->
+    <div class="option-panel">
+        <div class="section-label">2. Select Light Tone:</div>
+        <div class="grid-4-col">
+            <div class="tab-btn active" id="t1" onclick="switchTheme('warm', 't1')">Gold Cozy</div>
+            <div class="tab-btn" id="t2" onclick="switchTheme('ruby', 't2')">Ruby Rose</div>
+            <div class="tab-btn" id="t3" onclick="switchTheme('emerald', 't3')">Xmas Pine</div>
+            <div class="tab-btn" id="t4" onclick="switchTheme('fairy', 't4')">Cyber Neon</div>
+        </div>
+    </div>
+
+    <!-- 🌌 ৩. ডিস্ট্রিবিউশন মোড (নতুন ফিচার) -->
+    <div class="option-panel">
+        <div class="section-label">3. Light Distribution Style:</div>
+        <div class="grid-4-col">
+            <div class="tab-btn active" id="d_random" onclick="switchDistribution('random', 'd_random')">Full Random</div>
+            <div class="tab-btn" id="d_top" onclick="switchDistribution('top', 'd_top')">Top Curtain</div>
+            <div class="tab-btn" id="d_bottom" onclick="switchDistribution('bottom', 'd_bottom')">Floor Glow</div>
+            <div class="tab-btn" id="d_vignette" onclick="switchDistribution('vignette', 'd_vignette')">Edge Border</div>
+        </div>
+    </div>
+
+    <div class="control-panel">
+        <div class="slider-group">
+            <div class="slider-label">
+                <label for="bokehSlider">Light Count / Density</label>
+                <span id="bokehVal">45</span>
+            </div>
+            <input type="range" id="bokehSlider" min="10" max="100" value="45" oninput="onParamChange()" disabled>
+        </div>
+
+        <div class="slider-group">
+            <div class="slider-label">
+                <label for="atmosphereSlider">Ambient Color Burn Glow</label>
+                <span id="atmosphereVal">35</span>
+            </div>
+            <input type="range" id="atmosphereSlider" min="0" max="80" value="35" oninput="onParamChange()" disabled>
+        </div>
+    </div>
+
+    <button id="exportBtn" class="save-btn" onclick="downloadArt()" disabled>Export Pro Masterpiece</button>
+    <div id="loadingText" class="loader">Refracting custom bokeh particles...</div>
+</div>
+
+<script>
+    const canvas = document.getElementById('festiveCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    let baseImg = new Image();
+    let renderTimeout = null;
+    let cachedParticles = []; 
+    
+    let currentShape = 'circle';
+    let currentDistribution = 'random';
+    let currentThemeColors = {
+        primary: 'rgba(255, 155, 50, ',
+        secondary: 'rgba(255, 80, 30, '
+    };
+
+    document.getElementById('imageLoader').addEventListener('change', (e) => {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            baseImg.onload = function() {
+                document.getElementById('uploadLabel').classList.add('loaded');
+                document.getElementById('uploadLabel').innerText = '✓ Base Image Loaded';
+                
+                setupCanvasDimensions();
+                generateDeterministicParticles();
+                enableUIControls();
+                renderFestiveProMagic();
+            }
+            baseImg.src = event.target.result;
+        }
+        if(e.target.files[0]) reader.readAsDataURL(e.target.files[0]);
+    });
+
+    function setupCanvasDimensions() {
+        let w = baseImg.width; let h = baseImg.height;
+        const maxLimit = 800; 
+        if (w > maxLimit || h > maxLimit) {
+            if (w > h) { h = Math.round((h * maxLimit) / w); w = maxLimit; }
+            else { w = Math.round((w * maxLimit) / h); h = maxLimit; }
+        }
+        canvas.width = w; canvas.height = h;
+    }
+
+    function enableUIControls() {
+        document.getElementById('bokehSlider').disabled = false;
+        document.getElementById('atmosphereSlider').disabled = false;
+        document.getElementById('exportBtn').disabled = false;
+    }
+
+    function generateDeterministicParticles() {
+        cachedParticles = [];
+        for (let i = 0; i < 250; i++) {
+            cachedParticles.push({
+                randX: Math.random(),
+                randY: Math.random(),
+                sizeFactor: 0.2 + Math.random() * 0.8,
+                rotation: Math.random() * Math.PI * 2,
+                colorType: Math.random() > 0.35 ? 'p' : 's'
+            });
+        }
+    }
+
+    // 🟢 শেপ সুইচার ইঞ্জিন
+    function switchShape(shapeKey, elementId) {
+        document.querySelectorAll('[id^="s_"]').forEach(el => el.classList.remove('active'));
+        document.getElementById(elementId).classList.add('active');
+        currentShape = shapeKey;
+        if (baseImg.src) renderFestiveProMagic();
+    }
+
+    // 🎨 কালার থিম সুইচার
+    function switchTheme(themeKey, elementId) {
+        document.querySelectorAll('[id^="t"]').forEach(el => el.classList.remove('active'));
+        document.getElementById(elementId).classList.add('active');
+
+        if (themeKey === 'warm') {
+            currentThemeColors = { primary: 'rgba(255, 155, 50, ', secondary: 'rgba(255, 80, 30, ' };
+        } else if (themeKey === 'ruby') {
+            currentThemeColors = { primary: 'rgba(244, 63, 94, ', secondary: 'rgba(219, 39, 119, ' };
+        } else if (themeKey === 'emerald') {
+            currentThemeColors = { primary: 'rgba(16, 185, 129, ', secondary: 'rgba(234, 179, 8, ' };
+        } else if (themeKey === 'fairy') {
+            currentThemeColors = { primary: 'rgba(0, 242, 254, ', secondary: 'rgba(253, 0, 245, ' }; // সাইবারপাঙ্ক নিয়ন ভাইব
+        }
+
+        if (baseImg.src) renderFestiveProMagic();
+    }
+
+    // 🌌 ডিস্ট্রিবিউশন সুইচার (আলোর পজিশনিং টাইপ)
+    function switchDistribution(distKey, elementId) {
+        document.querySelectorAll('[id^="d_"]').forEach(el => el.classList.remove('active'));
+        document.getElementById(elementId).classList.add('active');
+        currentDistribution = distKey;
+        if (baseImg.src) renderFestiveProMagic();
+    }
+
+    function onParamChange() {
+        document.getElementById('bokehVal').innerText = document.getElementById('bokehSlider').value;
+        document.getElementById('atmosphereVal').innerText = document.getElementById('atmosphereSlider').value;
+
+        if (!baseImg.src) return;
+        document.getElementById('loadingText').style.visibility = 'visible';
+
+        clearTimeout(renderTimeout);
+        renderTimeout = setTimeout(() => { renderFestiveProMagic(); }, 50);
+    }
+
+    // 🌪️ প্রো রেন্ডারিং লাইটিং পাইপলাইন
+    function renderFestiveProMagic() {
+        const w = canvas.width;
+        const h = canvas.height;
+
+        const bokehCount = parseInt(document.getElementById('bokehSlider').value) * 2;
+        const ambientGlow = parseInt(document.getElementById('atmosphereSlider').value) / 100;
+
+        // ১. বেস ফটো ড্রয়িং
+        ctx.drawImage(baseImg, 0, 0, w, h);
+
+        // ২. অ্যাম্বিয়েন্ট বায়ুমণ্ডল ওভারলে
+        ctx.save();
+        ctx.globalCompositeOperation = 'color-burn';
+        ctx.fillStyle = currentThemeColors.primary + '0.12)';
+        ctx.fillRect(0, 0, w, h);
+        
+        ctx.globalCompositeOperation = 'screen';
+        ctx.fillStyle = currentThemeColors.secondary + (ambientGlow * 0.35) + ')';
+        ctx.fillRect(0, 0, w, h);
+        ctx.restore();
+
+        // ৩. কাস্টম শেপ রেন্ডারিং কোর ইঞ্জিন লুপ
+        ctx.save();
+        ctx.globalCompositeOperation = 'screen';
+
+        cachedParticles.slice(0, bokehCount).forEach(p => {
+            let px = p.randX * w;
+            let py = p.randY * h;
+
+            // ডিস্ট্রিবিউশন ম্যাথমেটিক্স ফিল্টারিং
+            if (currentDistribution === 'top') {
+                py = p.randY * (h * 0.55); // শুধু উপরের অর্ধে লাইট থাকবে
+            } else if (currentDistribution === 'bottom') {
+                py = (h * 0.45) + p.randY * (h * 0.55); // শুধু নিচের অর্ধে লাইট থাকবে
+            } else if (currentDistribution === 'vignette') {
+                // বর্ডারের চারদিকে আলো পুশ করার ইকুয়েশন
+                if(p.randX > 0.2 && p.randX < 0.8 && p.randY > 0.2 && p.randY < 0.8) return; 
+            }
+
+            let size = (15 + p.sizeFactor * 40) * (w / 650);
+            let alpha = 0.12 + (p.sizeFactor * 0.22);
+            let colorStr = p.colorType === 'p' ? currentThemeColors.primary : currentThemeColors.secondary;
+            
+            ctx.save();
+            ctx.translate(px, py);
+            ctx.rotate(p.rotation);
+
+            // গ্লোয়িং গ্রেডিয়েন্ট ফিল সেটআপ
+            let grad = ctx.createRadialGradient(0, 0, 0, 0, 0, size);
+            grad.addColorStop(0, colorStr + alpha + ')');
+            grad.addColorStop(0.5, colorStr + (alpha * 0.4) + ')');
+            grad.addColorStop(1, colorStr + '0)');
+            ctx.fillStyle = grad;
+
+            // কাস্টম শেপ সিলেকশন এক্সিকিউশন
+            if (currentShape === 'circle') {
+                ctx.beginPath();
+                ctx.arc(0, 0, size, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (currentShape === 'hexagon') {
+                drawHexagon(ctx, 0, 0, size);
+            } else if (currentShape === 'heart') {
+                drawHeart(ctx, 0, 0, size);
+            } else if (currentShape === 'star') {
+                drawFairyStar(ctx, 0, 0, size);
+            }
+            ctx.restore();
+        });
+        ctx.restore();
+
+        document.getElementById('loadingText').style.visibility = 'hidden';
+    }
+
+    // ⬡ ষড়ভুজ আঁকার জ্যামিতিক কোড
+    function drawHexagon(context, cx, cy, r) {
+        context.beginPath();
+        for (let i = 0; i < 6; i++) {
+            let angle = (i * Math.PI) / 3;
+            let hx = cx + r * Math.cos(angle);
+            let hy = cy + r * Math.sin(angle);
+            if (i === 0) context.moveTo(hx, hy);
+            else context.lineTo(hx, hy);
+        }
+        context.closePath();
+        context.fill();
+    }
+
+    // ❤️ বেজিয়ার কার্ভ হার্ট শেপ ম্যাথ
+    function drawHeart(context, cx, cy, r) {
+        context.beginPath();
+        let topY = cy - r * 0.3;
+        context.moveTo(cx, topY);
+        context.bezierCurveTo(cx - r * 0.6, cy - r * 1.1, cx - r * 1.2, cy - r * 0.4, cx - r, cy + r * 0.1);
+        context.bezierCurveTo(cx - r * 0.8, cy + r * 0.6, cx - r * 0.2, cy + r * 0.9, cx, cy + r);
+        context.bezierCurveTo(cx + r * 0.2, cy + r * 0.9, cx + r * 0.8, cy + r * 0.6, cx + r, cy + r * 0.1);
+        context.bezierCurveTo(cx + r * 1.2, cy - r * 0.4, cx + r * 0.6, cy - r * 1.1, cx, topY);
+        context.closePath();
+        context.fill();
+    }
+
+    // 🌟 ৪-পয়েন্ট ডায়মন্ড স্টার বার্স্ট ম্যাথ
+    function drawFairyStar(context, cx, cy, r) {
+        context.beginPath();
+        context.moveTo(cx, cy - r);
+        context.quadraticCurveTo(cx, cy, cx + r, cy);
+        context.quadraticCurveTo(cx, cy, cx, cy + r);
+        context.quadraticCurveTo(cx, cy, cx - r, cy);
+        context.quadraticCurveTo(cx, cy, cx, cy - r);
+        context.closePath();
+        context.fill();
+    }
+
+    function downloadArt() {
+        if (!baseImg.src) return;
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.96);
+        const downloadLink = document.createElement('a');
+        downloadLink.download = 'shagor_festive_pro_' + Date.now() + '.jpg';
+        downloadLink.href = dataUrl;
+        downloadLink.click();
+
+        if (window.AndroidInterface && window.AndroidInterface.saveToGallery) {
+            window.AndroidInterface.saveToGallery(dataUrl);
+        }
+    }
+</script>
+
+</body>
+</html>

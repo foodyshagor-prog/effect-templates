@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Geometric Mesh Mobile Editor</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #020617 100%);
+            color: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            height: -webkit-fill-available; /* Fixes mobile viewport issues */
+            overflow: hidden;
+        }
+
+        /* Canvas Workspace Area */
+        .workspace {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .canvas-container {
+            position: relative;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            border-radius: 16px;
+            overflow: hidden;
+            background: #020617;
+            max-width: 100%;
+            max-height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #target-image {
+            display: block;
+            max-width: 100%;
+            max-height: 50vh;
+            object-fit: contain;
+            border-radius: 16px;
+        }
+
+        #effect-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+        }
+
+        /* Touch-friendly Bottom Sheet Controls */
+        .controls-sheet {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px 24px 0 0;
+            padding: 20px;
+            max-height: 45vh;
+            overflow-y: auto;
+            box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .sheet-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 8px;
+        }
+
+        h2 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+            background: linear-gradient(135deg, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hint {
+            font-size: 0.75rem;
+            color: #64748b;
+            text-align: center;
+        }
+
+        /* Control Input Styling */
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .label-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #94a3b8;
+        }
+
+        .value-display {
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: #38bdf8;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            background: #1e293b;
+            border-radius: 9999px;
+            outline: none;
+            accent-color: #38bdf8;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #f8fafc;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+            cursor: pointer;
+        }
+
+        /* Action Buttons Grid */
+        .action-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 4px;
+        }
+
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-upload {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #f8fafc;
+            grid-column: span 2;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+        }
+
+        .btn-secondary {
+            background: #1e293b;
+            color: #94a3b8;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        #file-upload {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="workspace">
+        <div class="canvas-container" id="container">
+            <img id="target-image" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80" alt="Source">
+            <canvas id="effect-canvas"></canvas>
+        </div>
+    </div>
+
+    <div class="controls-sheet">
+        <div class="sheet-header">
+            <h2>Geometric Overlay</h2>
+            <div class="hint">Tap & drag image to paint mesh</div>
+        </div>
+
+        <label for="file-upload" class="btn btn-upload">Choose Photo From Gallery</label>
+        <input type="file" id="file-upload" accept="image/*">
+
+        <div class="control-group">
+            <div class="label-row">
+                <label>Density Nodes</label>
+                <div class="value-display" id="val-count">200</div>
+            </div>
+            <input type="range" id="param-count" min="30" max="400" value="200">
+        </div>
+
+        <div class="control-group">
+            <div class="label-row">
+                <label>Connection Range</label>
+                <div class="value-display" id="val-dist">60px</div>
+            </div>
+            <input type="range" id="param-dist" min="20" max="130" value="60">
+        </div>
+
+        <div class="control-group">
+            <div class="label-row">
+                <label>Geometric Shading</label>
+                <div class="value-display" id="val-mesh">20%</div>
+            </div>
+            <input type="range" id="param-mesh" min="0" max="100" value="20">
+        </div>
+
+        <div class="control-group">
+            <div class="label-row">
+                <label>Drift Movement</label>
+                <div class="value-display" id="val-speed">0.4</div>
+            </div>
+            <input type="range" id="param-speed" min="0" max="30" value="4">
+        </div>
+
+        <div class="action-grid">
+            <button class="btn btn-secondary" id="btn-clear">Reset Mesh</button>
+            <button class="btn btn-primary" id="btn-save">Save Output</button>
+        </div>
+    </div>
+
+    <script>
+        const image = document.getElementById('target-image');
+        const canvas = document.getElementById('effect-canvas');
+        const ctx = canvas.getContext('2d');
+        const fileUpload = document.getElementById('file-upload');
+
+        const pCount = document.getElementById('param-count');
+        const pDist = document.getElementById('param-dist');
+        const pMesh = document.getElementById('param-mesh');
+        const pSpeed = document.getElementById('param-speed');
+
+        let particles = [];
+        let config = {
+            count: parseInt(pCount.value),
+            maxDist: parseInt(pDist.value),
+            size: 1.5,
+            meshOpacity: parseInt(pMesh.value) / 100,
+            speed: parseInt(pSpeed.value) / 10
+        };
+
+        function initCanvas() {
+            canvas.width = image.clientWidth;
+            canvas.height = image.clientHeight;
+            generateParticles(false);
+        }
+
+        image.addEventListener('load', initCanvas);
+        window.addEventListener('resize', initCanvas);
+        if (image.complete) { initCanvas(); }
+
+        class Particle {
+            constructor(x, y, auto = false) {
+                this.x = x !== undefined ? x : Math.random() * canvas.width;
+                if (y === undefined && auto) {
+                    this.y = Math.random() * (canvas.height * 0.55); 
+                    this.x = (canvas.width * 0.15) + Math.random() * (canvas.width * 0.7);
+                } else {
+                    this.y = y !== undefined ? y : Math.random() * canvas.height;
+                }
+                this.vx = (Math.random() - 0.5) * 1.5;
+                this.vy = (Math.random() - 0.5) * 1.5;
+            }
+
+            update() {
+                this.x += this.vx * config.speed;
+                this.y += this.vy * config.speed;
+
+                if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+                if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, config.size, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.fill();
+            }
+        }
+
+        function generateParticles(keepExisting = false) {
+            if (!keepExisting) particles = [];
+            if (particles.length < config.count) {
+                const add = config.count - particles.length;
+                for (let i = 0; i < add; i++) particles.push(new Particle(undefined, undefined, true));
+            } else {
+                particles.splice(config.count);
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => p.update());
+
+            const len = particles.length;
+            for (let i = 0; i < len; i++) {
+                const p1 = particles[i];
+                for (let j = i + 1; j < len; j++) {
+                    const p2 = particles[j];
+                    const dx = p1.x - p2.x;
+                    const dy = p1.y - p2.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < config.maxDist) {
+                        let alpha = (1 - (dist / config.maxDist));
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(p1.x, p1.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.strokeStyle = `rgba(147, 197, 253, ${alpha * 0.25})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.stroke();
+
+                        for (let k = j + 1; k < len; k++) {
+                            const p3 = particles[k];
+                            const dx2 = p2.x - p3.x;
+                            const dy2 = p2.y - p3.y;
+                            if (Math.sqrt(dx2 * dx2 + dy2 * dy2) < config.maxDist) {
+                                ctx.beginPath();
+                                ctx.moveTo(p1.x, p1.y);
+                                ctx.lineTo(p2.x, p2.y);
+                                ctx.lineTo(p3.x, p3.y);
+                                ctx.closePath();
+                                ctx.fillStyle = `rgba(168, 85, 247, ${alpha * config.meshOpacity * 0.2})`;
+                                ctx.fill();
+                            }
+                        }
+                    }
+                }
+            }
+            particles.forEach(p => p.draw());
+            requestAnimationFrame(animate);
+        }
+
+        // Mobile Touch Pointer Interactions
+        function pointerSpawn(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            
+            const x = clientX - rect.left;
+            const y = clientY - rect.top;
+            
+            if(x >= 0 && x <= canvas.width && y >= 0 && y <= canvas.height) {
+                for(let i=0; i<2; i++) {
+                    particles.push(new Particle(x + (Math.random()*16 - 8), y + (Math.random()*16 - 8)));
+                }
+                config.count = particles.length;
+                pCount.value = config.count;
+                document.getElementById('val-count').innerText = config.count;
+            }
+        }
+
+        canvas.addEventListener('touchstart', (e) => {
+            pointerSpawn(e);
+            canvas.addEventListener('touchmove', pointerSpawn);
+        });
+        window.addEventListener('touchend', () => canvas.removeEventListener('touchmove', pointerSpawn));
+
+        // Desktop fallback pointer mapping
+        canvas.addEventListener('mousedown', (e) => {
+            pointerSpawn(e);
+            canvas.addEventListener('mousemove', pointerSpawn);
+        });
+        window.addEventListener('mouseup', () => canvas.removeEventListener('mousemove', pointerSpawn));
+
+        // Realtime Panel Events
+        pCount.addEventListener('input', (e) => {
+            config.count = parseInt(e.target.value);
+            document.getElementById('val-count').innerText = config.count;
+            generateParticles(true);
+        });
+        pDist.addEventListener('input', (e) => {
+            config.maxDist = parseInt(e.target.value);
+            document.getElementById('val-dist').innerText = config.maxDist + 'px';
+        });
+        pMesh.addEventListener('input', (e) => {
+            config.meshOpacity = parseInt(e.target.value) / 100;
+            document.getElementById('val-mesh').innerText = e.target.value + '%';
+        });
+        pSpeed.addEventListener('input', (e) => {
+            config.speed = parseInt(e.target.value) / 10;
+            document.getElementById('val-speed').innerText = config.speed;
+        });
+        document.getElementById('btn-clear').addEventListener('click', () => {
+            particles = [];
+            generateParticles(false);
+        });
+
+        fileUpload.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => image.src = event.target.result;
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Combined File Export Engine
+        document.getElementById('btn-save').addEventListener('click', () => {
+            const expCanvas = document.createElement('canvas');
+            const expCtx = expCanvas.getContext('2d');
+            expCanvas.width = image.naturalWidth;
+            expCanvas.height = image.naturalHeight;
+
+            expCtx.drawImage(image, 0, 0);
+
+            const sX = image.naturalWidth / canvas.width;
+            const sY = image.naturalHeight / canvas.height;
+            const len = particles.length;
+
+            for (let i = 0; i < len; i++) {
+                const p1 = particles[i];
+                for (let j = i + 1; j < len; j++) {
+                    const p2 = particles[j];
+                    const dist = Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+
+                    if (dist < config.maxDist) {
+                        let alpha = (1 - (dist / config.maxDist));
+                        expCtx.beginPath();
+                        expCtx.moveTo(p1.x * sX, p1.y * sY);
+                        expCtx.lineTo(p2.x * sX, p2.y * sY);
+                        expCtx.strokeStyle = `rgba(147, 197, 253, ${alpha * 0.25})`;
+                        expCtx.lineWidth = 0.5 * ((sX + sY) / 2);
+                        expCtx.stroke();
+
+                        for (let k = j + 1; k < len; k++) {
+                            const p3 = particles[k];
+                            if (Math.sqrt(Math.pow(p2.x - p3.x, 2) + Math.pow(p2.y - p3.y, 2)) < config.maxDist) {
+                                expCtx.beginPath();
+                                expCtx.moveTo(p1.x * sX, p1.y * sY);
+                                expCtx.lineTo(p2.x * sX, p2.y * sY);
+                                expCtx.lineTo(p3.x * sX, p3.y * sY);
+                                expCtx.closePath();
+                                expCtx.fillStyle = `rgba(168, 85, 247, ${alpha * config.meshOpacity * 0.2})`;
+                                expCtx.fill();
+                            }
+                        }
+                    }
+                }
+            }
+
+            particles.forEach(p => {
+                expCtx.beginPath();
+                expCtx.arc(p.x * sX, p.y * sY, config.size * ((sX + sY) / 2), 0, Math.PI * 2);
+                expCtx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                expCtx.fill();
+            });
+
+            const link = document.createElement('a');
+            link.download = 'geometric-dark-manipulation.png';
+            link.href = expCanvas.toDataURL('image/png');
+            link.click();
+        });
+
+        animate();
+    </script>
+</body>
+</html>

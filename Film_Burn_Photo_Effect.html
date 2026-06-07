@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Film Burn Editor</title>
+    <style>
+        :root {
+            --burn-opacity: 0.85;
+            --burn-hue: 0deg;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 100%;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        header {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        header h1 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            background: linear-gradient(to right, #ff8a00, #e52e71);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 4/5; 
+            background: #000;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #main-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        #film-burn-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; 
+            
+            /* The Film Burn Gradient Formula */
+            background: 
+                radial-gradient(circle at 10% 95%, rgba(255, 30, 0, 0.95) 0%, rgba(255, 100, 0, 0.6) 25%, transparent 60%),
+                radial-gradient(circle at 35% 65%, rgba(255, 200, 50, 0.6) 0%, transparent 55%),
+                linear-gradient(45deg, rgba(255, 0, 0, 0.25) 0%, transparent 40%);
+                
+            mix-blend-mode: screen;
+            opacity: var(--burn-opacity);
+            filter: hue-rotate(var(--burn-hue)) contrast(1.2);
+            transition: opacity 0.1s ease, filter 0.1s ease;
+        }
+
+        .controls {
+            padding: 25px 20px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* Side-by-side buttons */
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .control-group label {
+            font-size: 0.85rem;
+            color: #b3b3b3;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 16px;
+            text-align: center;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.1s;
+            color: white;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .upload-btn {
+            background: linear-gradient(135deg, #ff512f, #dd2476);
+            box-shadow: 0 4px 15px rgba(221, 36, 118, 0.3);
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, #00c6ff, #0072ff);
+            box-shadow: 0 4px 15px rgba(0, 114, 255, 0.3);
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 5px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1>Film Burn</h1>
+        </header>
+        
+        <div class="canvas-container">
+            <img id="main-image" src="https://images.unsplash.com/photo-1528696892704-5e1122852276?q=80&w=800&auto=format&fit=crop" alt="Canvas" crossorigin="anonymous">
+            <div id="film-burn-overlay"></div>
+        </div>
+
+        <div class="controls">
+            <div class="button-group">
+                <label for="image-upload" class="btn upload-btn">Upload Photo</label>
+                <input type="file" id="image-upload" accept="image/*" hidden>
+                
+                <div id="download-btn" class="btn download-btn">Save Image</div>
+            </div>
+            
+            <div class="control-group">
+                <label for="intensity">Burn Intensity</label>
+                <input type="range" id="intensity" min="0" max="1" step="0.01" value="0.85">
+            </div>
+
+            <div class="control-group">
+                <label for="hue">Color Shift (Hue)</label>
+                <input type="range" id="hue" min="0" max="360" step="1" value="0">
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const imageUpload = document.getElementById('image-upload');
+            const mainImage = document.getElementById('main-image');
+            const intensitySlider = document.getElementById('intensity');
+            const hueSlider = document.getElementById('hue');
+            const downloadBtn = document.getElementById('download-btn');
+
+            // Handle Photo Upload
+            imageUpload.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        mainImage.src = event.target.result;
+                    }
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            // Handle Intensity Slider
+            intensitySlider.addEventListener('input', function(e) {
+                document.documentElement.style.setProperty('--burn-opacity', e.target.value);
+            });
+
+            // Handle Color Shift (Hue) Slider
+            hueSlider.addEventListener('input', function(e) {
+                document.documentElement.style.setProperty('--burn-hue', e.target.value + 'deg');
+            });
+
+            // Handle Image Export
+            downloadBtn.addEventListener('click', () => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Keep file export resolution high
+                const w = mainImage.naturalWidth;
+                const h = mainImage.naturalHeight;
+                
+                if (w === 0 || h === 0) return; // Prevent saving if image isn't loaded
+                
+                canvas.width = w;
+                canvas.height = h;
+
+                // Draw native image
+                ctx.drawImage(mainImage, 0, 0, w, h);
+
+                // Configure composition options to match CSS exactly
+                const maxDim = Math.max(w, h);
+                ctx.globalCompositeOperation = 'screen';
+                ctx.globalAlpha = parseFloat(intensitySlider.value);
+                ctx.filter = `hue-rotate(${hueSlider.value}deg) contrast(1.2)`;
+
+                // Replicate CSS gradients mathematically on the canvas
+                let g1 = ctx.createRadialGradient(w * 0.1, h * 0.95, 0, w * 0.1, h * 0.95, maxDim * 0.6);
+                g1.addColorStop(0, 'rgba(255, 30, 0, 0.95)');
+                g1.addColorStop(0.416, 'rgba(255, 100, 0, 0.6)'); 
+                g1.addColorStop(1, 'transparent');
+                ctx.fillStyle = g1;
+                ctx.fillRect(0, 0, w, h);
+
+                let g2 = ctx.createRadialGradient(w * 0.35, h * 0.65, 0, w * 0.35, h * 0.65, maxDim * 0.55);
+                g2.addColorStop(0, 'rgba(255, 200, 50, 0.6)');
+                g2.addColorStop(1, 'transparent');
+                ctx.fillStyle = g2;
+                ctx.fillRect(0, 0, w, h);
+
+                let g3 = ctx.createLinearGradient(0, h, w * 0.4, h - h * 0.4);
+                g3.addColorStop(0, 'rgba(255, 0, 0, 0.25)');
+                g3.addColorStop(1, 'transparent');
+                ctx.fillStyle = g3;
+                ctx.fillRect(0, 0, w, h);
+
+                // Trigger download
+                const link = document.createElement('a');
+                link.download = `filmburn_${Date.now()}.png`;
+                link.href = canvas.toDataURL('image/png', 1.0);
+                link.click();
+            });
+        });
+    </script>
+</body>
+</html>

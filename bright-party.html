@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bright Party Effect</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #020617 0%, #0f172a 100%);
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.05);
+            --neon-cyan: #00f3ff;
+            --neon-pink: #ff00ea;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 24px;
+            margin-top: 10px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: linear-gradient(to right, var(--neon-cyan), var(--neon-pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(0, 243, 255, 0.3);
+        }
+
+        .header p {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 20px;
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+        }
+
+        .upload-area {
+            border: 2px dashed rgba(0, 243, 255, 0.3);
+            border-radius: 16px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+            position: relative;
+            background: rgba(0, 243, 255, 0.02);
+        }
+
+        .upload-area:active {
+            background: rgba(0, 243, 255, 0.08);
+            border-color: var(--neon-cyan);
+        }
+
+        .upload-area input[type="file"] {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0; cursor: pointer;
+        }
+
+        .upload-icon {
+            font-size: 32px;
+            margin-bottom: 10px;
+            filter: drop-shadow(0 0 8px var(--neon-pink));
+        }
+
+        .upload-text {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--neon-cyan);
+        }
+
+        .canvas-container {
+            width: 100%;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            display: none;
+            background: #000;
+            position: relative;
+            box-shadow: 0 0 30px rgba(255, 0, 234, 0.15);
+        }
+
+        canvas {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .controls {
+            display: none;
+            margin-bottom: 10px;
+        }
+
+        .control-group {
+            margin-bottom: 24px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            margin-bottom: 12px;
+            color: var(--text-main);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .control-label span:last-child {
+            color: var(--neon-pink);
+        }
+
+        /* Modern Real-time Range Slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        
+        input[type=range]:focus { outline: none; }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: #000;
+            cursor: pointer;
+            margin-top: -10px;
+            box-shadow: 0 0 15px var(--neon-cyan), inset 0 0 5px var(--neon-pink);
+            border: 2px solid var(--neon-cyan);
+            transition: transform 0.1s;
+        }
+
+        input[type=range]::-webkit-slider-thumb:active {
+            transform: scale(1.15);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: linear-gradient(to right, var(--neon-cyan), var(--neon-pink));
+            border-radius: 2px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 800;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #00f3ff, #ff00ea);
+            box-shadow: 0 4px 20px rgba(255, 0, 234, 0.4);
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+            box-shadow: 0 2px 10px rgba(255, 0, 234, 0.2);
+        }
+
+        .loading-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            color: var(--neon-cyan);
+            font-size: 12px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            z-index: 10;
+            backdrop-filter: blur(4px);
+        }
+
+        .spinner {
+            border: 3px solid rgba(0, 243, 255, 0.2);
+            border-top: 3px solid var(--neon-pink);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 12px;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Bright Party</h1>
+        <p>Neon Glow & Particle Engine</p>
+    </div>
+
+    <div class="glass-panel">
+        
+        <div class="upload-area" id="uploadArea">
+            <input type="file" id="imageInput" accept="image/jpeg, image/png, image/webp">
+            <div class="upload-icon">🪩</div>
+            <div class="upload-text">Select Image to Synthesize</div>
+            <p style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">Procedural WebGL Processing</p>
+        </div>
+
+        <div class="canvas-container" id="canvasContainer">
+            <canvas id="editorCanvas"></canvas>
+            <div class="loading-overlay" id="loadingOverlay">
+                <div class="spinner"></div>
+                <span>SYNTHESIZING...</span>
+            </div>
+        </div>
+
+        <div class="controls" id="controls">
+            <div class="control-group">
+                <div class="control-label">
+                    <span>Neon Energy</span>
+                    <span id="intensityValue">60%</span>
+                </div>
+                <input type="range" id="intensitySlider" min="10" max="100" value="60">
+            </div>
+
+            <button class="btn btn-primary" id="saveBtn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                Export Image
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        const imageInput = document.getElementById('imageInput');
+        const uploadArea = document.getElementById('uploadArea');
+        const canvasContainer = document.getElementById('canvasContainer');
+        const canvas = document.getElementById('editorCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        const controls = document.getElementById('controls');
+        const intensitySlider = document.getElementById('intensitySlider');
+        const intensityValue = document.getElementById('intensityValue');
+        const saveBtn = document.getElementById('saveBtn');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+
+        let originalImage = new Image();
+        let isImageLoaded = false;
+        let renderTimeout; 
+        
+        // Capped to prevent memory limits on mobile devices
+        const MAX_DIMENSION = 1200; 
+
+        imageInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                originalImage.onload = function() {
+                    initCanvas();
+                    isImageLoaded = true;
+                    uploadArea.style.display = 'none';
+                    canvasContainer.style.display = 'block';
+                    controls.style.display = 'block';
+                    
+                    processPartyEffect(); 
+                }
+                originalImage.src = event.target.result;
+            }
+            reader.readAsDataURL(file);
+        });
+
+        function initCanvas() {
+            let width = originalImage.width;
+            let height = originalImage.height;
+
+            if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+                const ratio = Math.min(MAX_DIMENSION / width, MAX_DIMENSION / height);
+                width = Math.round(width * ratio);
+                height = Math.round(height * ratio);
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+        }
+
+        // Live slider with Debounce to maintain 60fps UI
+        intensitySlider.addEventListener('input', (e) => {
+            intensityValue.textContent = e.target.value + '%';
+            if (!isImageLoaded) return;
+
+            clearTimeout(renderTimeout);
+            loadingOverlay.style.display = 'flex';
+
+            renderTimeout = setTimeout(() => {
+                processPartyEffect();
+                loadingOverlay.style.display = 'none';
+            }, 150);
+        });
+
+        // Seeded random number generator so particles stay consistent per intensity value
+        function pseudoRandom(seed) {
+            let x = Math.sin(seed++) * 10000;
+            return x - Math.floor(x);
+        }
+
+        function processPartyEffect() {
+            const energy = parseInt(intensitySlider.value);
+            const w = canvas.width;
+            const h = canvas.height;
+
+            ctx.clearRect(0, 0, w, h);
+            
+            // STEP 1: Moody Club Lighting (High Contrast, Darkened)
+            // As energy increases, contrast goes up and brightness drops slightly to make neon pop
+            const contrast = 120 + (energy * 0.8);
+            const brightness = 100 - (energy * 0.3);
+            const saturate = 100 + (energy * 0.6);
+            
+            ctx.filter = `contrast(${contrast}%) brightness(${brightness}%) saturate(${saturate}%) grayscale(20%)`;
+            ctx.drawImage(originalImage, 0, 0, w, h);
+            ctx.filter = 'none';
+
+            // STEP 2: Cyberpunk Duotone Wash
+            ctx.globalCompositeOperation = 'overlay';
+            const gradient = ctx.createLinearGradient(0, 0, w, h);
+            gradient.addColorStop(0, `rgba(0, 243, 255, ${energy / 200})`); // Cyan top left
+            gradient.addColorStop(1, `rgba(255, 0, 234, ${energy / 200})`); // Pink bottom right
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, w, h);
+
+            // STEP 3: Procedural Neon Light Streaks & Triangles
+            ctx.globalCompositeOperation = 'screen';
+            
+            let seed = 42; // Fixed seed so lines don't jitter wildly when sliding
+            const elementCount = Math.floor(energy / 2); // More energy = more shapes
+
+            for (let i = 0; i < elementCount; i++) {
+                const x = pseudoRandom(seed++) * w;
+                const y = pseudoRandom(seed++) * h;
+                const size = pseudoRandom(seed++) * (w * 0.2);
+                const isCyan = pseudoRandom(seed++) > 0.5;
+                const color = isCyan ? '#00f3ff' : '#ff00ea';
+                
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.rotate(pseudoRandom(seed++) * Math.PI * 2);
+                
+                // Add glowing drop shadow to shapes
+                ctx.shadowColor = color;
+                ctx.shadowBlur = 15;
+                
+                // Randomly choose between a sharp line streak or a geometric triangle shard
+                if (pseudoRandom(seed++) > 0.4) {
+                    // Draw Light Streak
+                    ctx.beginPath();
+                    ctx.moveTo(-size, 0);
+                    ctx.lineTo(size, 0);
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = Math.max(1, pseudoRandom(seed++) * 5);
+                    ctx.globalAlpha = 0.3 + (pseudoRandom(seed++) * 0.5);
+                    ctx.stroke();
+                } else {
+                    // Draw Triangle Shard
+                    ctx.beginPath();
+                    ctx.moveTo(0, -size/3);
+                    ctx.lineTo(size/4, size/3);
+                    ctx.lineTo(-size/4, size/3);
+                    ctx.closePath();
+                    ctx.fillStyle = color;
+                    ctx.globalAlpha = 0.15 + (pseudoRandom(seed++) * 0.4);
+                    ctx.fill();
+                }
+                ctx.restore();
+            }
+
+            // STEP 4: Glowing Particle Dust
+            ctx.globalCompositeOperation = 'color-dodge';
+            const particleCount = energy * 4;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const px = pseudoRandom(seed++) * w;
+                const py = pseudoRandom(seed++) * h;
+                const pSize = pseudoRandom(seed++) * 3;
+                
+                ctx.beginPath();
+                ctx.arc(px, py, pSize, 0, Math.PI * 2);
+                ctx.fillStyle = pseudoRandom(seed++) > 0.5 ? '#00f3ff' : '#ffffff';
+                ctx.globalAlpha = pseudoRandom(seed++);
+                ctx.fill();
+            }
+
+            // Reset Context
+            ctx.globalAlpha = 1.0;
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.shadowBlur = 0;
+        }
+
+        // Export for Android WebView bridge or standard download
+        saveBtn.addEventListener('click', () => {
+            if (!isImageLoaded) return;
+            
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+            const link = document.createElement('a');
+            link.download = `Bright_Party_${new Date().getTime()}.jpg`;
+            link.href = dataUrl;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+    </script>
+</body>
+</html>

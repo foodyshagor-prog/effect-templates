@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Glow Light Photo Effect Studio (Clean)</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        html, body {
+            min-height: 100%;
+            background: #060913;
+            color: #f1f5f9;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            overflow-y: auto;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            padding: 20px 16px;
+            text-align: center;
+            background: rgba(6, 9, 19, 0.95);
+            border-bottom: 1px solid rgba(14, 165, 233, 0.2);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        header h1 {
+            font-size: 1.1rem;
+            font-weight: 900;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #0ea5e9;
+            text-shadow: 0 0 15px rgba(14, 165, 233, 0.6);
+        }
+
+        header span {
+            display: block;
+            font-size: 0.7rem;
+            color: #94a3b8;
+            letter-spacing: 1px;
+            margin-top: 4px;
+            text-transform: uppercase;
+        }
+
+        .workspace {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            min-height: 380px;
+        }
+
+        .canvas-container {
+            width: 100%;
+            max-width: 500px;
+            height: 480px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            border-radius: 24px;
+            overflow: hidden;
+            background: #02040a;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            box-shadow: 0 30px 60px -15px rgba(0,0,0,0.9);
+        }
+
+        canvas {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            display: none;
+        }
+
+        .placeholder {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            padding: 30px;
+            text-align: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        .placeholder .icon-glow {
+            width: 72px;
+            height: 72px;
+            background: rgba(14, 165, 233, 0.03);
+            border: 1px solid rgba(14, 165, 233, 0.3);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+            box-shadow: 0 0 25px rgba(14, 165, 233, 0.15);
+        }
+
+        .placeholder svg {
+            width: 32px;
+            height: 32px;
+            fill: #0ea5e9;
+        }
+
+        .placeholder p {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #e2e8f0;
+            margin-bottom: 4px;
+        }
+
+        .placeholder span {
+            font-size: 0.75rem;
+            color: #475569;
+        }
+
+        .controls-panel {
+            background: #0b1120;
+            border-top: 1px solid rgba(14, 165, 233, 0.25);
+            padding: 24px;
+            border-radius: 28px 28px 0 0;
+            box-shadow: 0 -15px 35px rgba(0,0,0,0.7);
+            max-width: 600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .control-row {
+            margin-bottom: 18px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: #94a3b8;
+            margin-bottom: 8px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .control-header span.val {
+            background: rgba(14, 165, 233, 0.1);
+            color: #38bdf8;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-family: monospace;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: #1e293b;
+            border-radius: 2px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #0ea5e9;
+            box-shadow: 0 0 12px rgba(14, 165, 233, 0.6);
+            cursor: pointer;
+            border: 2px solid #ffffff;
+        }
+
+        .color-group {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-top: 4px;
+        }
+
+        .color-btn {
+            background: #1e293b;
+            border: 2px solid transparent;
+            color: #94a3b8;
+            padding: 10px 4px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            border-radius: 10px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .color-btn.active {
+            border-color: #fff;
+            color: #fff;
+        }
+
+        #btn-cyan.active { background: #083344; box-shadow: 0 0 10px rgba(6, 182, 212, 0.3); color: #22d3ee; }
+        #btn-blue.active { background: #1e3a8a; box-shadow: 0 0 10px rgba(59, 130, 246, 0.3); color: #60a5fa; }
+        #btn-gold.active { background: #422006; box-shadow: 0 0 10px rgba(234, 179, 8, 0.3); color: #fde047; }
+        #btn-magenta.active { background: #4c0519; box-shadow: 0 0 10px rgba(236, 72, 153, 0.3); color: #f472b6; }
+
+        .action-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 14px;
+            margin-top: 24px;
+        }
+
+        .btn {
+            font-family: inherit;
+            font-weight: 700;
+            font-size: 0.85rem;
+            height: 48px;
+            border: none;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-upload {
+            background: #1e293b;
+            color: #cbd5e1;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .btn-save {
+            background: #0ea5e9;
+            color: #ffffff;
+            box-shadow: 0 4px 20px rgba(14, 165, 233, 0.3);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        #file-input {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Glow Light Studio</h1>
+        <span>Electric Energy & Edge Aura FX Generator</span>
+    </header>
+
+    <div class="workspace">
+        <div class="canvas-container" id="drop-zone">
+            <div class="placeholder" id="placeholder">
+                <div class="icon-glow">
+                    <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.5 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                </div>
+                <p>Load Subject Photo</p>
+                <span>Works beautifully with athletic portraits and dark backgrounds</span>
+            </div>
+            <canvas id="mainCanvas"></canvas>
+        </div>
+    </div>
+
+    <div class="controls-panel">
+        <div class="control-row">
+            <div class="control-header">
+                <span>Core Aura Intensity</span>
+                <span class="val" id="val-glow">60%</span>
+            </div>
+            <input type="range" id="slider-glow" min="20" max="100" value="60" step="5">
+        </div>
+
+        <div class="control-row">
+            <div class="control-header">
+                <span>Contours Outline Trace</span>
+                <span class="val" id="val-edges">45%</span>
+            </div>
+            <input type="range" id="slider-edges" min="10" max="90" value="45" step="5">
+        </div>
+
+        <div class="control-row">
+            <div class="control-header">
+                <span>Neon Hue Profile Spectrum</span>
+            </div>
+            <div class="color-group">
+                <button class="color-btn active" id="btn-cyan" onclick="setGlowColor('#06b6d4', '#22d3ee', 'cyan')">Electric Blue</button>
+                <button class="color-btn" id="btn-blue" onclick="setGlowColor('#2563eb', '#60a5fa', 'blue')">Deep Cobalt</button>
+                <button class="color-btn" id="btn-gold" onclick="setGlowColor('#d97706', '#fde047', 'gold')">Cosmic Gold</button>
+                <button class="color-btn" id="btn-magenta" onclick="setGlowColor('#db2777', '#f472b6', 'magenta')">Neon Rose</button>
+            </div>
+        </div>
+
+        <div class="action-grid">
+            <button class="btn btn-upload" id="btn-upload">Load Image</button>
+            <button class="btn btn-save" id="btn-save">Export Image</button>
+        </div>
+    </div>
+
+    <input type="file" id="file-input" accept="image/*">
+
+    <script>
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d');
+        const fileInput = document.getElementById('file-input');
+        const placeholder = document.getElementById('placeholder');
+        const dropZone = document.getElementById('drop-zone');
+        const btnUpload = document.getElementById('btn-upload');
+        const btnSave = document.getElementById('btn-save');
+
+        const sliderGlow = document.getElementById('slider-glow');
+        const sliderEdges = document.getElementById('slider-edges');
+
+        const valGlow = document.getElementById('val-glow');
+        const valEdges = document.getElementById('val-edges');
+
+        let srcImage = null;
+        let primaryColor = '#06b6d4';
+        let secondaryColor = '#22d3ee';
+        let colorKey = 'cyan';
+
+        // Event hooks
+        sliderGlow.addEventListener('input', (e) => { valGlow.innerText = e.target.value + '%'; processGlowPipeline(); });
+        sliderEdges.addEventListener('input', (e) => { valEdges.innerText = e.target.value + '%'; processGlowPipeline(); });
+
+        btnUpload.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('click', () => { if(!srcImage) fileInput.click(); });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) handleFile(file);
+        });
+
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.style.borderColor = '#0ea5e9'; });
+        dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor = 'transparent'; });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = 'transparent';
+            if(e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
+        });
+
+        function handleFile(file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                srcImage = new Image();
+                srcImage.onload = () => {
+                    placeholder.style.display = 'none';
+                    canvas.style.display = 'block';
+                    normalizeDimensions();
+                    processGlowPipeline();
+                };
+                srcImage.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function normalizeDimensions() {
+            const boundary = 900;
+            let w = srcImage.width;
+            let h = srcImage.height;
+
+            if (w > h && w > boundary) {
+                h = Math.round((h * boundary) / w);
+                w = boundary;
+            } else if (h > boundary) {
+                w = Math.round((w * boundary) / h);
+                h = boundary;
+            }
+            canvas.width = w;
+            canvas.height = h;
+        }
+
+        function setGlowColor(pColor, sColor, key) {
+            primaryColor = pColor;
+            secondaryColor = sColor;
+            colorKey = key;
+            
+            document.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`btn-${key}`).classList.add('active');
+            processGlowPipeline();
+        }
+
+        function processGlowPipeline() {
+            if (!srcImage) return;
+
+            const w = canvas.width;
+            const h = canvas.height;
+            
+            const glowFactor = parseInt(sliderGlow.value) / 100;
+            const edgeStrength = parseInt(sliderEdges.value) / 100;
+
+            // Step 1: Establish deep premium backdrop grading
+            ctx.fillStyle = '#03060f';
+            ctx.fillRect(0, 0, w, h);
+
+            // Create contextual color vignette background ambiance
+            let centerAura = ctx.createRadialGradient(w/2, h/2, 10, w/2, h/2, Math.max(w, h) * 0.7);
+            centerAura.addColorStop(0, primaryColor + '2c');
+            centerAura.addColorStop(0.5, primaryColor + '08');
+            centerAura.addColorStop(1, '#00000000');
+            ctx.fillStyle = centerAura;
+            ctx.fillRect(0, 0, w, h);
+
+            // Step 2: Render base subject with rich depth contrast corrections
+            ctx.save();
+            ctx.filter = 'brightness(0.9) contrast(1.15) saturate(1.1)';
+            ctx.drawImage(srcImage, 0, 0, w, h);
+            ctx.restore();
+
+            // Step 3: Run real-time procedural neon edge detection mapping
+            const buffer = document.createElement('canvas');
+            buffer.width = w;
+            buffer.height = h;
+            const bCtx = buffer.getContext('2d');
+            bCtx.drawImage(srcImage, 0, 0, w, h);
+            
+            try {
+                const imgData = bCtx.getImageData(0, 0, w, h);
+                const data = imgData.data;
+                
+                const edgeMap = new Uint8ClampedArray(w * h);
+                const factor = 1.5 + (edgeStrength * 3.5);
+
+                for (let y = 1; y < h - 1; y++) {
+                    for (let x = 1; x < w - 1; x++) {
+                        const idx = (y * w + x) * 4;
+                        
+                        const vC = (data[idx]*0.3 + data[idx+1]*0.59 + data[idx+2]*0.11);
+                        const vR = (data[idx+4]*0.3 + data[idx+5]*0.59 + data[idx+6]*0.11);
+                        const vD = (data[(idx + w*4)]*0.3 + data[(idx + w*4)+1]*0.59 + data[(idx + w*4)+2]*0.11);
+                        
+                        const diff = Math.abs(vC - vR) + Math.abs(vC - vD);
+                        edgeMap[y * w + x] = diff * factor > 45 ? 255 : 0;
+                    }
+                }
+
+                // Step 4: Draw neon lightning contours via edge buffer interpolation
+                bCtx.clearRect(0, 0, w, h);
+                const outData = bCtx.createImageData(w, h);
+                const r = parseInt(secondaryColor.slice(1,3), 16);
+                const g = parseInt(secondaryColor.slice(3,5), 16);
+                const b = parseInt(secondaryColor.slice(5,7), 16);
+
+                for (let i = 0; i < edgeMap.length; i++) {
+                    if (edgeMap[i] === 255) {
+                        const oIdx = i * 4;
+                        outData.data[oIdx] = r;
+                        outData.data[oIdx+1] = g;
+                        outData.data[oIdx+2] = b;
+                        outData.data[oIdx+3] = 230;
+                    }
+                }
+                bCtx.putImageData(outData, 0, 0);
+
+                // Blend contours onto main presentation canvas using glowing bloom offsets
+                ctx.save();
+                ctx.globalCompositeOperation = 'screen';
+                
+                // Broad underlying volumetric bloom
+                ctx.filter = `blur(12px) brightness(1.5)`;
+                ctx.globalAlpha = glowFactor * 0.75;
+                ctx.drawImage(buffer, 0, 0, w, h);
+                
+                // Intense core electrical filament bloom
+                ctx.filter = `blur(3px)`;
+                ctx.globalAlpha = glowFactor * 0.9;
+                ctx.drawImage(buffer, 0, 0, w, h);
+                ctx.restore();
+
+            } catch (e) {
+                console.warn("Cross-origin restriction or data stream fallback applied.");
+            }
+
+            // Step 5: Apply global high-contrast overlay vignette framing
+            ctx.save();
+            ctx.globalCompositeOperation = 'multiply';
+            let frameVignette = ctx.createRadialGradient(w/2, h/2, Math.min(w, h) * 0.4, w/2, h/2, Math.max(w, h) * 0.8);
+            frameVignette.addColorStop(0, 'rgba(255,255,255,1)');
+            frameVignette.addColorStop(1, 'rgba(5, 8, 20, 0.95)');
+            ctx.fillStyle = frameVignette;
+            ctx.fillRect(0, 0, w, h);
+            ctx.restore();
+        }
+
+        btnSave.addEventListener('click', () => {
+            if (!srcImage) return;
+            const link = document.createElement('a');
+            link.download = `glow_light_clean_${colorKey}.jpg`;
+            link.href = canvas.toDataURL('image/jpeg', 0.98);
+            link.click();
+        });
+    </script>
+</body>
+</html>

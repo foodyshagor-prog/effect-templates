@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shagor Copy Print Effect Studio</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #0c0d12;
+            color: #f1f5f9;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 500px;
+            padding: 24px;
+            background: #161824;
+            border-radius: 28px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.65);
+            border: 1px solid #25293c;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            background: linear-gradient(45deg, #ffffff, #a1a1aa, #4b5563);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .canvas-container {
+            width: 100%;
+            margin-bottom: 22px;
+            background: #1f2235;
+            border-radius: 18px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 280px;
+            border: 1px dashed #3a3f58;
+        }
+
+        canvas {
+            max-width: 100%;
+            max-height: 50vh;
+            display: block;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.55);
+        }
+
+        /* 🗂️ প্রফেশনাল স্লাইডার প্যানেল */
+        .control-panel {
+            background: #1f2235;
+            padding: 18px;
+            border-radius: 18px;
+            border: 1px solid #2b2f4a;
+            margin-bottom: 22px;
+            text-align: left;
+        }
+
+        .slider-group {
+            margin-bottom: 16px;
+        }
+
+        .slider-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: #94a3b8;
+            margin-bottom: 8px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .slider-label span {
+            color: #ffffff;
+            background: #2e3352;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 5px;
+            background: #333957;
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #ffffff;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(255,255,255,0.5);
+            transition: transform 0.1s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:active {
+            transform: scale(1.2);
+        }
+
+        input[type="range"]:disabled::-webkit-slider-thumb {
+            background: #4b5563;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        /* 🔘 কন্ট্রোল বাটনসমূহ */
+        .btn-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .upload-btn, .save-btn {
+            padding: 15px 24px;
+            font-size: 16px;
+            font-weight: 700;
+            border-radius: 35px;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .upload-btn {
+            border: 1px solid #333957;
+            background: #25293c;
+            color: #fff;
+        }
+
+        .save-btn {
+            background: #ffffff;
+            color: #0c0d12;
+            box-shadow: 0 4px 20px rgba(255, 255, 255, 0.15);
+        }
+
+        .save-btn:disabled {
+            background: #252838 !important;
+            color: #555c7d !important;
+            box-shadow: none !important;
+            cursor: not-allowed;
+        }
+
+        .loader {
+            visibility: hidden;
+            color: #94a3b8;
+            font-size: 13px;
+            margin-top: 6px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Copy Print Studio</h2>
+    
+    <div class="canvas-container">
+        <canvas id="photoCanvas"></canvas>
+    </div>
+
+    <div class="control-panel">
+        <div class="slider-group">
+            <div class="slider-label">
+                <label for="contrastSlider">Ink Contrast (Threshold)</label>
+                <span id="contrastVal">128</span>
+            </div>
+            <input type="range" id="contrastSlider" min="50" max="200" value="128" oninput="onSliderDrag()" disabled>
+        </div>
+
+        <div class="slider-group">
+            <div class="slider-label">
+                <label for="lineSlider">Drum Roller Streaks</label>
+                <span id="lineVal">30</span>
+            </div>
+            <input type="range" id="lineSlider" min="0" max="80" value="30" oninput="onSliderDrag()" disabled>
+        </div>
+
+        <div class="slider-group">
+            <div class="slider-label">
+                <label for="tonerSlider">Toner Grain Splatter</label>
+                <span id="tonerVal">25</span>
+            </div>
+            <input type="range" id="tonerSlider" min="5" max="70" value="25" oninput="onSliderDrag()" disabled>
+        </div>
+    </div>
+
+    <div class="btn-wrapper">
+        <label class="upload-btn">
+            <input type="file" id="imageLoader" accept="image/*"/>
+            Upload Document/Photo
+        </label>
+        <button id="saveBtn" class="save-btn" onclick="saveCopyPrintImage()" disabled>Download Copy Print Art</button>
+        <div id="loadingText" class="loader">Simulating xerox machine...</div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('photoCanvas');
+    const ctx = canvas.getContext('2d');
+    const imageLoader = document.getElementById('imageLoader');
+    const contrastSlider = document.getElementById('contrastSlider');
+    const lineSlider = document.getElementById('lineSlider');
+    const tonerSlider = document.getElementById('tonerSlider');
+    const saveBtn = document.getElementById('saveBtn');
+    const loadingText = document.getElementById('loadingText');
+    
+    let originalImage = new Image();
+    let renderTimeout = null;
+
+    imageLoader.addEventListener('change', handleImage, false);
+
+    function handleImage(e) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            originalImage.onload = function() {
+                // ২:৩ মেগা-পোস্টার রেশিও অথবা মূল ছবির আকৃতি মেইনটেইন
+                let targetWidth = originalImage.width;
+                let targetHeight = originalImage.height;
+                const maxDimension = 650;
+
+                if (targetWidth > maxDimension || targetHeight > maxDimension) {
+                    if (targetWidth > targetHeight) {
+                        targetHeight = Math.round((targetHeight * maxDimension) / targetWidth);
+                        targetWidth = maxDimension;
+                    } else {
+                        targetWidth = Math.round((targetWidth * maxDimension) / targetHeight);
+                    }
+                }
+
+                canvas.width = targetWidth;
+                canvas.height = targetHeight;
+                
+                // সমস্ত স্লাইডার সক্রিয় করা
+                contrastSlider.disabled = false;
+                lineSlider.disabled = false;
+                tonerSlider.disabled = false;
+                saveBtn.disabled = false; 
+                
+                applyCopyPrintFX();
+            }
+            originalImage.src = event.target.result;
+        }
+        if(e.target.files[0]) {
+            reader.readAsDataURL(e.target.files[0]);
+        }
+    }
+
+    function onSliderDrag() {
+        document.getElementById('contrastVal').innerText = contrastSlider.value;
+        document.getElementById('lineVal').innerText = lineSlider.value;
+        document.getElementById('tonerVal').innerText = tonerSlider.value;
+        
+        if (!originalImage.src) return;
+        loadingText.style.visibility = 'visible';
+        saveBtn.disabled = true;
+
+        clearTimeout(renderTimeout);
+        renderTimeout = setTimeout(() => {
+            applyCopyPrintFX();
+        }, 50);
+    }
+
+    // 🚀 মূল কপি প্রিন্ট বা জেরক্স ইফেক্ট ইঞ্জিন Pipeline
+    function applyCopyPrintFX() {
+        if (!originalImage.src) return;
+
+        const width = canvas.width;
+        const height = canvas.height;
+
+        // ১. খসখসে ম্যাট বেইস ড্রয়িং
+        ctx.drawImage(originalImage, 0, 0, width, height);
+        
+        const srcData = ctx.getImageData(0, 0, width, height);
+        const dstData = ctx.createImageData(width, height);
+        
+        const s = srcData.data;
+        const d = dstData.data;
+
+        const threshold = parseInt(contrastSlider.value);
+        const lineIntensity = parseInt(lineSlider.value);
+        const tonerIntensity = parseInt(tonerSlider.value);
+
+        // 🖨️ নিখুঁত রোলার এফেক্টের জন্য ভার্টিক্যাল স্ট্রিক লাইনের অ্যারে তৈরি (X-axis ভিত্তিক)
+        // এটি লুপের বাইরে জেনারেট করায় সম্পূর্ণ উপর থেকে নিচ পর্যন্ত সোজা সুতা বা লাইনের মতো দাগ পরবে
+        const verticalLines = new Float32Array(width);
+        for(let x = 0; x < width; x++) {
+            let baseNoise = Math.sin(x * 0.04) * Math.cos(x * 0.12) * 0.25;
+            // জেরক্সের র্যান্ডম সূক্ষ্ম ডার্ক স্ক্র্যাচ লাইন জেনারেশন
+            if (Math.random() < 0.05) {
+                baseNoise += (Math.random() - 0.5) * 0.7; 
+            }
+            verticalLines[x] = baseNoise;
+        }
+
+        // ২. পিক্সেল ম্যানিপুলেশন লুপ
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                const idx = (y * width + x) * 4;
+                
+                // লুমিন্যান্স বা গ্রে-স্কেল ভ্যালু হিসাব
+                const r = s[idx], g = s[idx+1], b = s[idx+2];
+                let lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+
+                // উপর থেকে নিচের ভার্টিক্যাল স্ট্রিক মিক্স করা
+                let streak = verticalLines[x] * lineIntensity * 2.5;
+                
+                // কালির গুঁড়ো বা হাই-ফ্রিকোয়েন্সি টোনার স্প্ল্যাটার
+                let tonerSplatter = (Math.random() - 0.5) * tonerIntensity * 1.5;
+
+                // মডুলেটেড লুমিন্যান্স
+                let finalLum = lum + streak + tonerSplatter;
+
+                // ৩. সিগময়েড সফটেনড ইনক ব্লিডিং লজিক (Soft High-Contrast Edge)
+                // এটি পিওর ব্ল্যাক/হোয়াইট ক্লিপিং করার পরিবর্তে বর্ডারে কালির হালকা ব্লিডিং ভাব বজায় রাখে
+                let diff = finalLum - threshold;
+                let k = 0.16; // ব্লিডিং সফটনেস ফ্যাক্টর
+                let factor = 1 / (1 + Math.exp(-k * diff)); 
+
+                // ৪. রিয়ালিস্টিক ম্যাট ইনক বনাম অফ-হোয়াইট পেপার প্যালেট ম্যাপিং
+                // একদম রিয়েল প্রিন্টের মতো গভীর চারকোল ব্ল্যাক ইনক (#1B1C1F) এবং অফ-হোয়াইট পেপার (#EAE8E1)
+                const inkR = 27,   inkG = 28,   inkB = 31;
+                const paperR = 234, paperG = 232, paperB = 225;
+
+                d[idx]     = Math.floor(inkR + (paperR - inkR) * factor);     // Red
+                d[idx + 1] = Math.floor(inkG + (paperG - inkG) * factor);     // Green
+                d[idx + 2] = Math.floor(inkB + (paperB - inkB) * factor);     // Blue
+                d[idx + 3] = 255;                                             // Alpha
+            }
+        }
+        ctx.putImageData(dstData, 0, 0);
+
+        // ৫. ফাইনাল ওল্ড জ্যাকেড পেপার ফিল্টার ওভারলে
+        ctx.globalCompositeOperation = 'multiply';
+        ctx.fillStyle = "rgba(240, 238, 233, 0.15)";
+        ctx.fillRect(0, 0, width, height);
+        ctx.globalCompositeOperation = 'source-over';
+
+        loadingText.style.visibility = 'hidden';
+        saveBtn.disabled = false;
+    }
+
+    function saveCopyPrintImage() {
+        if (!originalImage.src) return;
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.95);
+
+        const downloadLink = document.createElement('a');
+        downloadLink.download = 'shagor_copy_print_' + Date.now() + '.jpg';
+        downloadLink.href = dataUrl;
+        downloadLink.click();
+
+        if (window.AndroidInterface && window.AndroidInterface.saveToGallery) {
+            window.AndroidInterface.saveToGallery(dataUrl);
+        }
+    }
+</script>
+
+</body>
+</html>

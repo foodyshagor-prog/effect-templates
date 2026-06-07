@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>War of Hearts Effect Editor</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f1013 0%, #1a1c24 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .header {
+            width: 100%;
+            padding: 16px;
+            text-align: center;
+            background: rgba(26, 28, 36, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            font-weight: 600;
+            font-size: 1.1rem;
+            letter-spacing: 0.5px;
+            z-index: 10;
+        }
+
+        .workspace {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            padding: 12px;
+        }
+
+        /* Fixed Viewport Sizing to prevent WebView Height Collapse */
+        .canvas-container {
+            width: 85vw;
+            height: 106.25vw; 
+            max-width: 340px;
+            max-height: 425px;
+            background: #111;
+            border-radius: 24px;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+            overflow: hidden;
+            position: relative;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .control-panel {
+            width: 100%;
+            background: #16181f;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px 24px 0 0;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding-bottom: env(safe-area-inset-bottom, 16px);
+        }
+
+        .slot-tabs {
+            display: flex;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 4px;
+        }
+
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border-radius: 8px;
+            color: #8a8d99;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .tab.active {
+            background: #ffffff;
+            color: #111215;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .control-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        label {
+            font-size: 0.75rem;
+            color: #8a8d99;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .upload-btn {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px dashed rgba(255, 255, 255, 0.2);
+            color: #fff;
+            padding: 12px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 0.9rem;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        input[type="text"] {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 10px;
+            color: white;
+            font-size: 0.9rem;
+            width: 100%;
+            outline: none;
+        }
+
+        .slider-container {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex: 1;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #ffffff;
+            cursor: pointer;
+        }
+
+        .save-btn {
+            background: #ffffff;
+            color: #000000;
+            border: none;
+            width: 100%;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(255, 255, 255, 0.15);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">Fluid Frame Editor</div>
+
+    <div class="workspace">
+        <div class="canvas-container">
+            <canvas id="editorCanvas" width="800" height="1000"></canvas>
+        </div>
+    </div>
+
+    <div class="control-panel">
+        <div class="slot-tabs">
+            <div class="tab active" onclick="switchSlot(0)">Frame 1</div>
+            <div class="tab" onclick="switchSlot(1)">Frame 2</div>
+            <div class="tab" onclick="switchSlot(2)">Frame 3</div>
+        </div>
+
+        <div class="control-group">
+            <label id="uploadLabel">Modify Frame 1 Image</label>
+            <label class="upload-btn" for="imageInput">Choose Photo</label>
+            <input type="file" id="imageInput" accept="image/*" onchange="handleImageUpload(event)">
+        </div>
+
+        <div class="control-row">
+            <div class="slider-container">
+                <label>Scale</label>
+                <input type="range" id="scaleSlider" min="0.1" max="3" step="0.01" value="1" oninput="updateTransform()">
+            </div>
+            <div class="slider-container">
+                <label>Rotation</label>
+                <input type="range" id="rotateSlider" min="-180" max="180" step="1" value="0" oninput="updateTransform()">
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label>Title Text</label>
+            <input type="text" id="textInput" value="WAR OF HEARTS" oninput="updateText()">
+        </div>
+
+        <div class="action-container">
+            <button class="save-btn" onclick="saveComposition()">Save Image</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('editorCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let currentSlot = 0;
+
+        // Structured Layout Canvas Positions & Fluid Interlocking Jigsaw Vectors
+        const slots = [
+            {
+                img: null, scale: 1, rotate: 0, x: 320, y: 350,
+                textX: 280, textY: 380,
+                drawMask: () => {
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.lineTo(400, 0);
+                    ctx.bezierCurveTo(380, 150, 480, 220, 400, 350);
+                    ctx.bezierCurveTo(300, 480, 150, 340, 180, 560);
+                    ctx.bezierCurveTo(200, 640, 100, 600, 0, 580);
+                    ctx.closePath();
+                }
+            },
+            {
+                img: null, scale: 1, rotate: 0, x: 620, y: 320,
+                textX: 620, textY: 320,
+                drawMask: () => {
+                    ctx.beginPath();
+                    ctx.moveTo(400, 0);
+                    ctx.lineTo(800, 0);
+                    ctx.lineTo(800, 580);
+                    ctx.bezierCurveTo(650, 580, 580, 460, 500, 380);
+                    ctx.bezierCurveTo(450, 330, 400, 220, 400, 0);
+                    ctx.closePath();
+                }
+            },
+            {
+                img: null, scale: 1, rotate: 0, x: 450, y: 720,
+                textX: 420, textY: 750,
+                drawMask: () => {
+                    ctx.beginPath();
+                    ctx.moveTo(0, 580);
+                    ctx.bezierCurveTo(100, 600, 200, 640, 180, 560);
+                    ctx.bezierCurveTo(150, 340, 300, 480, 400, 350);
+                    ctx.bezierCurveTo(480, 220, 380, 150, 400, 0);
+                    ctx.bezierCurveTo(400, 220, 450, 330, 500, 380);
+                    ctx.bezierCurveTo(580, 460, 650, 580, 800, 580);
+                    ctx.lineTo(800, 1000);
+                    ctx.lineTo(0, 1000);
+                    ctx.closePath();
+                }
+            }
+        ];
+
+        let titleText = "WAR OF HEARTS";
+        let isDragging = false;
+        let startX, startY;
+
+        function drawEverything() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 1. Draw Paper Textured Background
+            ctx.fillStyle = "#f3f2ee";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = "rgba(0, 0, 0, 0.015)";
+            for (let i = 0; i < canvas.width; i += 4) {
+                ctx.fillRect(i, 0, 2, canvas.height);
+            }
+
+            // 2. Render Slots Loop
+            slots.forEach((slot, index) => {
+                ctx.save();
+                slot.drawMask();
+                ctx.clip();
+
+                if (slot.img) {
+                    ctx.translate(slot.x, slot.y);
+                    ctx.rotate((slot.rotate * Math.PI) / 180);
+                    ctx.scale(slot.scale, slot.scale);
+                    ctx.drawImage(slot.img, -slot.img.width / 2, -slot.img.height / 2);
+                } else {
+                    // Distinct, high-visibility placeholder fills so frames never vanish
+                    const placeholders = [
+                        ['#2b2e3a', '#181a22', 'Photo Slot 1'],
+                        ['#202c39', '#111a24', 'Photo Slot 2'],
+                        ['#282533', '#15131c', 'Photo Slot 3']
+                    ];
+                    const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+                    grad.addColorStop(0, placeholders[index][0]);
+                    grad.addColorStop(1, placeholders[index][1]);
+                    ctx.fillStyle = grad;
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+                    ctx.font = "bold 26px sans-serif";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText(placeholders[index][2], slot.textX, slot.textY);
+                }
+                ctx.restore();
+            });
+
+            // 3. Thick Premium Framing Outlines (Mask Borders)
+            ctx.save();
+            ctx.lineWidth = 16;
+            ctx.strokeStyle = "#f3f2ee";
+            ctx.lineJoin = "round";
+            slots.forEach((slot) => {
+                slot.drawMask();
+                ctx.stroke();
+            });
+            ctx.restore();
+
+            // 4. Draw Bold Card Corner Accent (Matches reference proportions)
+            ctx.fillStyle = "#111111";
+            drawHeartSuit(ctx, 150, 140, 110);
+
+            // 5. Text Typography Overlay Elements
+            ctx.fillStyle = "#111111";
+            ctx.textAlign = "right";
+            
+            ctx.font = "italic 36px Georgia, serif";
+            ctx.fillText("soundtext", 740, 830);
+
+            ctx.font = "bold 68px 'Arial Black', Impact, sans-serif";
+            ctx.fillText(titleText.toUpperCase(), 740, 910);
+        }
+
+        function drawHeartSuit(context, x, y, size) {
+            context.save();
+            context.beginPath();
+            context.moveTo(x, y + size / 4);
+            context.bezierCurveTo(x, y - size / 4, x - size / 2, y - size / 2, x - size / 2, y + size / 4);
+            context.bezierCurveTo(x - size / 2, y + size * 0.6, x, y + size, x, y + size);
+            context.bezierCurveTo(x, y + size, x + size / 2, y + size * 0.6, x + size / 2, y + size / 4);
+            context.bezierCurveTo(x + size / 2, y - size / 2, x, y - size / 4, x, y + size / 4);
+            context.closePath();
+            context.fill();
+            context.restore();
+        }
+
+        function switchSlot(index) {
+            currentSlot = index;
+            document.querySelectorAll('.tab').forEach((tab, i) => {
+                tab.classList.toggle('active', i === index);
+            });
+            document.getElementById('uploadLabel').innerText = `Modify Frame ${index + 1} Image`;
+            document.getElementById('scaleSlider').value = slots[currentSlot].scale;
+            document.getElementById('rotateSlider').value = slots[currentSlot].rotate;
+        }
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    slots[currentSlot].img = img;
+                    slots[currentSlot].scale = Math.max(600 / img.width, 600 / img.height);
+                    document.getElementById('scaleSlider').value = slots[currentSlot].scale;
+                    drawEverything();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function updateTransform() {
+            slots[currentSlot].scale = parseFloat(document.getElementById('scaleSlider').value);
+            slots[currentSlot].rotate = parseInt(document.getElementById('rotateSlider').value);
+            drawEverything();
+        }
+
+        function updateText() {
+            titleText = document.getElementById('textInput').value;
+            drawEverything();
+        }
+
+        function setupTouchListeners() {
+            const container = document.querySelector('.canvas-container');
+
+            container.addEventListener('touchstart', (e) => {
+                if (!slots[currentSlot].img) return;
+                isDragging = true;
+                const rect = canvas.getBoundingClientRect();
+                const touch = e.touches[0];
+                startX = (touch.clientX - rect.left) * (canvas.width / rect.width);
+                startY = (touch.clientY - rect.top) * (canvas.height / rect.height);
+            }, { passive: true });
+
+            container.addEventListener('touchmove', (e) => {
+                if (!isDragging || !slots[currentSlot].img) return;
+                const rect = canvas.getBoundingClientRect();
+                const touch = e.touches[0];
+                const currentX = (touch.clientX - rect.left) * (canvas.width / rect.width);
+                const currentY = (touch.clientY - rect.top) * (canvas.height / rect.height);
+
+                const dx = currentX - startX;
+                const dy = currentY - startY;
+
+                slots[currentSlot].x += dx;
+                slots[currentSlot].y += dy;
+
+                startX = currentX;
+                startY = currentY;
+
+                drawEverything();
+            }, { passive: true });
+
+            container.addEventListener('touchend', () => {
+                isDragging = false;
+            });
+        }
+
+        function saveComposition() {
+            const dataUrl = canvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.download = 'war_of_hearts_composition.png';
+            link.href = dataUrl;
+            link.click();
+
+            if (window.AndroidInterface && window.AndroidInterface.saveImage) {
+                window.AndroidInterface.saveImage(dataUrl);
+            }
+        }
+
+        // Direct Execution initialization Loop
+        setupTouchListeners();
+        drawEverything();
+    </script>
+</body>
+</html>

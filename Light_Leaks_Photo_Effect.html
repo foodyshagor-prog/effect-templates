@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Light Leaks Pro</title>
+    <style>
+        :root {
+            --primary: #ff7e5f;
+            --secondary: #feb47b;
+            --bg-dark: #0f0c29;
+            --panel-bg: rgba(20, 20, 35, 0.9);
+            --glass: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            color: white;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* App Bar */
+        .app-bar {
+            padding: 15px;
+            text-align: center;
+            font-weight: 800;
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Canvas Display Area */
+        #viewport {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+        }
+
+        canvas {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+            background-color: #111;
+        }
+
+        /* Mobile Controls */
+        .controls {
+            background: var(--panel-bg);
+            backdrop-filter: blur(25px);
+            padding: 25px 30px 40px 30px;
+            border-radius: 35px 35px 0 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .slider-row {
+            margin-bottom: 22px;
+        }
+
+        .label-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 0.8rem;
+            color: #ccc;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        input[type=range] {
+            width: 100%;
+            height: 6px;
+            -webkit-appearance: none;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            background: white;
+            border: 4px solid var(--primary);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(255, 126, 95, 0.5);
+        }
+
+        /* Buttons */
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 5px;
+        }
+
+        button {
+            flex: 1;
+            padding: 16px;
+            border: none;
+            border-radius: 18px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            transition: 0.2s;
+        }
+
+        .btn-open {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .btn-save {
+            background: linear-gradient(90deg, #ff7e5f, #feb47b);
+            color: white;
+            box-shadow: 0 8px 20px rgba(255, 126, 95, 0.3);
+        }
+
+        button:active { transform: scale(0.95); opacity: 0.8; }
+
+        #fileInput { display: none; }
+
+        #status {
+            position: absolute;
+            background: var(--primary);
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-bar">Light Leaks Pro</div>
+
+    <div id="viewport">
+        <canvas id="mainCanvas"></canvas>
+        <div id="status">PROCESSING...</div>
+    </div>
+
+    <div class="controls">
+        <div class="slider-row">
+            <div class="label-row">
+                <span>LEAK INTENSITY</span>
+                <span id="val-strength">60%</span>
+            </div>
+            <input type="range" id="strength" min="10" max="100" value="60">
+        </div>
+
+        <div class="slider-row">
+            <div class="label-row">
+                <span>VINTAGE GRAIN</span>
+                <span id="val-grain">30%</span>
+            </div>
+            <input type="range" id="grain" min="0" max="80" value="30">
+        </div>
+
+        <div class="btn-group">
+            <button class="btn-open" onclick="document.getElementById('fileInput').click()">Open Photo</button>
+            <button class="btn-save" onclick="saveImage()">Save Result</button>
+        </div>
+    </div>
+
+    <input type="file" id="fileInput" accept="image/*">
+
+    <script>
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        let originalImg = null;
+
+        // Load Image
+        document.getElementById('fileInput').onchange = (e) => {
+            const reader = new FileReader();
+            reader.onload = (f) => {
+                const img = new Image();
+                img.onload = () => {
+                    originalImg = img;
+                    applyEffect();
+                };
+                img.src = f.target.result;
+            };
+            reader.readAsDataURL(e.target.files[0]);
+        };
+
+        // Sliders
+        document.getElementById('strength').oninput = function() {
+            document.getElementById('val-strength').innerText = this.value + "%";
+            applyEffect();
+        };
+        document.getElementById('grain').oninput = function() {
+            document.getElementById('val-grain').innerText = this.value + "%";
+            applyEffect();
+        };
+
+        function applyEffect() {
+            if (!originalImg) return;
+
+            // Maintain aspect ratio (max 1200px for mobile performance)
+            const maxDim = 1200;
+            let w = originalImg.width;
+            let h = originalImg.height;
+            const scale = Math.min(maxDim / w, maxDim / h, 1);
+            w *= scale; h *= scale;
+
+            canvas.width = w;
+            canvas.height = h;
+
+            // 1. Draw Original Image with slight vintage tint
+            ctx.filter = 'contrast(1.1) brightness(1.05) saturate(1.1)';
+            ctx.drawImage(originalImg, 0, 0, w, h);
+            ctx.filter = 'none';
+
+            const strength = document.getElementById('strength').value / 100;
+            const grain = document.getElementById('grain').value / 100;
+
+            // 2. Add Vertical Light Leaks (Screen Mode)
+            ctx.globalCompositeOperation = 'screen';
+            
+            // Primary Orange Leak (Left-Mid)
+            drawLeak(w * 0.2, 0, w * 0.4, h, ['rgba(255,100,0,0.8)', 'rgba(255,200,50,0)'], strength);
+            
+            // Red Leak (Far Left)
+            drawLeak(0, 0, w * 0.3, h, ['rgba(255,0,50,0.6)', 'rgba(255,0,0,0)'], strength);
+
+            // Greenish/Yellow Leak (Right Side)
+            drawLeak(w * 0.7, 0, w * 0.2, h, ['rgba(100,255,100,0.4)', 'rgba(255,255,0,0)'], strength * 0.7);
+
+            // 3. Add Film Dust & Grain
+            ctx.globalCompositeOperation = 'overlay';
+            if (grain > 0) {
+                addGrain(w, h, grain);
+            }
+
+            ctx.globalCompositeOperation = 'source-over';
+        }
+
+        function drawLeak(x, y, width, height, colors, alpha) {
+            ctx.globalAlpha = alpha;
+            const grad = ctx.createLinearGradient(x, y, x + width, y);
+            grad.addColorStop(0, colors[0]);
+            grad.addColorStop(1, colors[1]);
+            
+            ctx.fillStyle = grad;
+            // Use a slightly tilted rectangle for organic feel
+            ctx.beginPath();
+            ctx.moveTo(x - 50, 0);
+            ctx.lineTo(x + width, 0);
+            ctx.lineTo(x + width - 100, height);
+            ctx.lineTo(x - 150, height);
+            ctx.fill();
+            ctx.globalAlpha = 1.0;
+        }
+
+        function addGrain(w, h, amount) {
+            // Tiny White Dust/Specks
+            ctx.fillStyle = "rgba(255,255,255,0.4)";
+            for (let i = 0; i < (w * h * 0.0001) * amount * 10; i++) {
+                const x = Math.random() * w;
+                const y = Math.random() * h;
+                const size = Math.random() * 2;
+                ctx.fillRect(x, y, size, size);
+            }
+            
+            // Fine Film Grain
+            const imgData = ctx.getImageData(0, 0, w, h);
+            const pixels = imgData.data;
+            for (let i = 0; i < pixels.length; i += 4) {
+                const noise = (Math.random() - 0.5) * (amount * 50);
+                pixels[i] += noise;
+                pixels[i+1] += noise;
+                pixels[i+2] += noise;
+            }
+            ctx.putImageData(imgData, 0, 0);
+        }
+
+        function saveImage() {
+            if (!originalImg) return;
+            const link = document.createElement('a');
+            link.download = 'light_leak_effect.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        window.onload = () => {
+            canvas.width = 400; canvas.height = 300;
+            ctx.fillStyle = "#111"; ctx.fillRect(0,0,400,300);
+            ctx.fillStyle = "#444"; ctx.textAlign = "center";
+            ctx.fillText("TAP 'OPEN PHOTO' TO START", 200, 150);
+        };
+    </script>
+</body>
+</html>

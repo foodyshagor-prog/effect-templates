@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Hot vs Cold Elemental Studio</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        html, body {
+            min-height: 100%;
+            min-height: 100dvh;
+            background: #060911;
+            color: #f1f5f9;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            overflow-y: auto;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            padding-top: env(safe-area-inset-top, 0px);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+
+        header {
+            padding: 16px;
+            text-align: center;
+            background: rgba(6, 9, 17, 0.75);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        header h1 {
+            font-size: 0.95rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #f8fafc;
+        }
+
+        header span {
+            display: block;
+            font-size: 0.7rem;
+            color: #64748b;
+            letter-spacing: 1px;
+            margin-top: 4px;
+        }
+
+        .workspace {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            min-height: 320px;
+        }
+
+        .canvas-container {
+            width: 100%;
+            max-width: 460px;
+            height: 360px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            border-radius: 24px;
+            overflow: hidden;
+            background: #020408;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        canvas {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            border-radius: 12px;
+            display: none;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9);
+        }
+
+        .placeholder {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+            cursor: pointer;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .placeholder .icon-box {
+            width: 64px;
+            height: 64px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+
+        .placeholder svg {
+            width: 32px;
+            height: 32px;
+            fill: #e2e8f0;
+            opacity: 0.4;
+        }
+
+        .placeholder p {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #475569;
+        }
+
+        .controls-panel {
+            background: #0b0e17;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 20px 24px;
+            border-radius: 28px 28px 0 0;
+            margin-top: auto;
+        }
+
+        .slider-group {
+            margin-bottom: 16px;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: #94a3b8;
+            margin-bottom: 8px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .slider-label span.val {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-family: monospace;
+            color: #cbd5e1;
+        }
+
+        .slider-label span.val.fire {
+            color: #f97316;
+            background: rgba(249, 115, 22, 0.1);
+        }
+
+        .slider-label span.val.ice {
+            color: #38bdf8;
+            background: rgba(56, 189, 248, 0.1);
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: #1e293b;
+            border-radius: 2px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #ffffff;
+            box-shadow: 0 0 8px rgba(0,0,0,0.5);
+            cursor: pointer;
+            border: 2px solid #64748b;
+        }
+
+        #slider-split::-webkit-slider-thumb { border-color: #f8fafc; }
+        #slider-fire::-webkit-slider-thumb { border-color: #ea580c; background: #ff7823; }
+        #slider-ice::-webkit-slider-thumb { border-color: #0284c7; background: #38bdf8; }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1.3fr;
+            gap: 14px;
+            margin-top: 18px;
+        }
+
+        .btn {
+            font-family: inherit;
+            font-weight: 700;
+            font-size: 0.9rem;
+            height: 48px;
+            border: none;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-upload {
+            background: #1e293b;
+            color: #cbd5e1;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .btn-save {
+            background: #f8fafc;
+            color: #0f172a;
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        #file-input {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Hot & Cold Dual Studio</h1>
+        <span>THERMAL ELEMENTAL SPLIT ENGINE</span>
+    </header>
+
+    <div class="workspace">
+        <div class="canvas-container" id="drop-zone">
+            <div class="placeholder" id="placeholder">
+                <div class="icon-box">
+                    <svg viewBox="0 0 24 24"><path d="M12 2A10 10 0 0 0 2 12a10 10 0 0 0 10 10 10 10 0 0 0 10-10A10 10 0 0 0 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-2.08.8-3.97 2.1-5.39L13 19.93z"/></svg>
+                </div>
+                <p>Upload composite graphic</p>
+            </div>
+            <canvas id="editorCanvas"></canvas>
+        </div>
+    </div>
+
+    <div class="controls-panel">
+        <div class="slider-group">
+            <div class="slider-label">
+                <span>Split Threshold Center</span>
+                <span class="val" id="val-split">50%</span>
+            </div>
+            <input type="range" id="slider-split" min="10" max="90" value="50" step="1">
+        </div>
+
+        <div class="slider-group">
+            <div class="slider-label">
+                <span>Fire Catalyst (Left Side)</span>
+                <span class="val fire" id="val-fire">80%</span>
+            </div>
+            <input type="range" id="slider-fire" min="10" max="150" value="80" step="5">
+        </div>
+
+        <div class="slider-group">
+            <div class="slider-label">
+                <span>Glacial Freeze (Right Side)</span>
+                <span class="val ice" id="val-ice">80%</span>
+            </div>
+            <input type="range" id="slider-ice" min="10" max="150" value="80" step="5">
+        </div>
+
+        <div class="action-buttons">
+            <button class="btn btn-upload" id="btn-upload">New Image</button>
+            <button class="btn btn-save" id="btn-save">Export Composition</button>
+        </div>
+    </div>
+
+    <input type="file" id="file-input" accept="image/*">
+
+    <script>
+        const canvas = document.getElementById('editorCanvas');
+        const ctx = canvas.getContext('2d');
+        const fileInput = document.getElementById('file-input');
+        const placeholder = document.getElementById('placeholder');
+        const dropZone = document.getElementById('drop-zone');
+        const btnUpload = document.getElementById('btn-upload');
+        const btnSave = document.getElementById('btn-save');
+
+        const sliderSplit = document.getElementById('slider-split');
+        const sliderFire = document.getElementById('slider-fire');
+        const sliderIce = document.getElementById('slider-ice');
+
+        const valSplit = document.getElementById('val-split');
+        const valFire = document.getElementById('val-fire');
+        const valIce = document.getElementById('val-ice');
+
+        let originalImage = null;
+        let fireParticles = [];
+        let iceParticles = [];
+
+        sliderSplit.addEventListener('input', (e) => { valSplit.innerText = e.target.value + '%'; renderThermalPipeline(); });
+        sliderFire.addEventListener('input', (e) => { valFire.innerText = e.target.value + '%'; renderThermalPipeline(); });
+        sliderIce.addEventListener('input', (e) => { valIce.innerText = e.target.value + '%'; renderThermalPipeline(); });
+
+        btnUpload.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('click', () => { if(!originalImage) fileInput.click(); });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                originalImage = new Image();
+                originalImage.onload = () => {
+                    placeholder.style.display = 'none';
+                    canvas.style.display = 'block';
+                    setupCanvasDimensions();
+                    precalculateAtmosphereParticles();
+                    renderThermalPipeline();
+                };
+                originalImage.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        function setupCanvasDimensions() {
+            const maxDimension = 750;
+            let width = originalImage.width;
+            let height = originalImage.height;
+
+            if (width > height && width > maxDimension) {
+                height = Math.round((height * maxDimension) / width);
+                width = maxDimension;
+            } else if (height > maxDimension) {
+                width = Math.round((width * maxDimension) / height);
+                height = maxDimension;
+            }
+            canvas.width = width;
+            canvas.height = height;
+        }
+
+        function precalculateAtmosphereParticles() {
+            fireParticles = [];
+            iceParticles = [];
+            
+            // Build random seed arrays so adjustment sliders perform fluidly without visual pops
+            for(let i = 0; i < 150; i++) {
+                fireParticles.push({
+                    xRatio: Math.random(),
+                    yRatio: Math.random(),
+                    size: 1 + Math.random() * 3,
+                    alpha: 0.2 + Math.random() * 0.6,
+                    drift: (Math.random() - 0.3) * 15
+                });
+                
+                iceParticles.push({
+                    xRatio: Math.random(),
+                    yRatio: Math.random(),
+                    size: 1.5 + Math.random() * 4,
+                    alpha: 0.15 + Math.random() * 0.5
+                });
+            }
+        }
+
+        function renderThermalPipeline() {
+            if (!originalImage) return;
+
+            const splitPos = (parseInt(sliderSplit.value) / 100) * canvas.width;
+            const fireIntensity = parseInt(sliderFire.value) / 100;
+            const iceIntensity = parseInt(sliderIce.value) / 100;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // ==========================================
+            // PASS 1: HOT FIRE ENVIRONMENT (LEFT SIDE)
+            // ==========================================
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(0, 0, splitPos, canvas.height);
+            ctx.clip();
+
+            // Hardware color grade: Warm sepia boost, explosive contrasts, and high heat saturation
+            ctx.filter = `brightness(0.95) contrast(1.25) saturate(${1.3 * fireIntensity}) sepia(0.35) hue-rotate(-12deg)`;
+            ctx.drawImage(originalImage, 0, 0, canvas.width, canvas.height);
+            ctx.filter = 'none';
+
+            // Fiery Amber Gradient Mask Overlay
+            ctx.save();
+            ctx.globalCompositeOperation = 'screen';
+            let fireGrad = ctx.createLinearGradient(0, canvas.height, splitPos, 0);
+            fireGrad.addColorStop(0, `rgba(235, 60, 0, ${0.45 * fireIntensity})`);
+            fireGrad.addColorStop(0.5, `rgba(255, 120, 0, ${0.25 * fireIntensity})`);
+            fireGrad.addColorStop(1, 'rgba(40, 10, 0, 0)');
+            ctx.fillStyle = fireGrad;
+            ctx.fillRect(0, 0, splitPos, canvas.height);
+            ctx.restore();
+
+            // Render Fire Sparks & Heat Embers
+            ctx.save();
+            ctx.globalCompositeOperation = 'screen';
+            fireParticles.forEach(p => {
+                const px = p.xRatio * splitPos; // lock within bounds cleanly
+                const py = p.yRatio * canvas.height;
+                
+                ctx.fillStyle = `rgba(255, ${130 + Math.random()*70}, 30, ${p.alpha * fireIntensity})`;
+                ctx.beginPath();
+                // Draw slightly elongated embers mimicking hot vertical speed lifts
+                ctx.ellipse(px, py, p.size, p.size * 1.4, Math.PI / 6, 0, 2 * Math.PI);
+                ctx.fill();
+            });
+            ctx.restore();
+            ctx.restore(); // end left clip
+
+
+            // ==========================================
+            // PASS 2: FREEZING COLD ENVIRONMENT (RIGHT SIDE)
+            // ==========================================
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(splitPos, 0, canvas.width - splitPos, canvas.height);
+            ctx.clip();
+
+            // Hardware color grade: Shift spectrum cleanly to absolute cyan-blue and raise white levels
+            ctx.filter = `brightness(1.05) contrast(1.15) saturate(${1.1 * iceIntensity}) hue-rotate(170deg) sepia(0.1)`;
+            ctx.drawImage(originalImage, 0, 0, canvas.width, canvas.height);
+            ctx.filter = 'none';
+
+            // Glacial Frost Gradient Mask Overlay
+            ctx.save();
+            ctx.globalCompositeOperation = 'screen';
+            let iceGrad = ctx.createLinearGradient(canvas.width, 0, splitPos, canvas.height);
+            iceGrad.addColorStop(0, `rgba(0, 150, 255, ${0.4 * iceIntensity})`);
+            iceGrad.addColorStop(0.6, `rgba(0, 230, 255, ${0.18 * iceIntensity})`);
+            iceGrad.addColorStop(1, 'rgba(0, 20, 40, 0)');
+            ctx.fillStyle = iceGrad;
+            ctx.fillRect(splitPos, 0, canvas.width - splitPos, canvas.height);
+            ctx.restore();
+
+            // Render Ice Crystals & Frost Flurries
+            ctx.save();
+            ctx.globalCompositeOperation = 'screen';
+            iceParticles.forEach(p => {
+                const px = splitPos + (p.xRatio * (canvas.width - splitPos));
+                const py = p.yRatio * canvas.height;
+                
+                // Soft glowing circular frozen frost bokeh particles
+                let particleGrad = ctx.createRadialGradient(px, py, 0, px, py, p.size);
+                particleGrad.addColorStop(0, `rgba(240, 252, 255, ${p.alpha * iceIntensity})`);
+                particleGrad.addColorStop(0.4, `rgba(130, 220, 255, ${p.alpha * 0.4 * iceIntensity})`);
+                particleGrad.addColorStop(1, 'rgba(255,255,255,0)');
+                
+                ctx.fillStyle = particleGrad;
+                ctx.beginPath();
+                ctx.arc(px, py, p.size, 0, 2 * Math.PI);
+                ctx.fill();
+            });
+            ctx.restore();
+            ctx.restore(); // end right clip
+
+
+            // ==========================================
+            // PASS 3: THE ELEMENTAL SPLIT INTERFACE BORDER
+            // ==========================================
+            ctx.save();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+            ctx.lineWidth = 1.5;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
+            ctx.beginPath();
+            ctx.moveTo(splitPos, 0);
+            ctx.lineTo(splitPos, canvas.height);
+            ctx.stroke();
+            ctx.restore();
+
+            // Fine Ambient Vignette Finish
+            ctx.save();
+            ctx.globalCompositeOperation = 'multiply';
+            let vignette = ctx.createRadialGradient(
+                canvas.width/2, canvas.height/2, Math.min(canvas.width, canvas.height) * 0.45,
+                canvas.width/2, canvas.height/2, Math.max(canvas.width, canvas.height) * 0.8
+            );
+            vignette.addColorStop(0, 'rgba(255, 255, 255, 1.0)');
+            vignette.addColorStop(0.7, 'rgba(180, 185, 200, 0.8)');
+            vignette.addColorStop(1, 'rgba(12, 16, 26, 1.0)');
+            ctx.fillStyle = vignette;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.restore();
+        }
+
+        btnSave.addEventListener('click', () => {
+            if (!originalImage) return;
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+            const link = document.createElement('a');
+            link.download = 'hot_versus_cold_artwork.jpg';
+            link.href = dataUrl;
+            link.click();
+        });
+    </script>
+</body>
+</html>

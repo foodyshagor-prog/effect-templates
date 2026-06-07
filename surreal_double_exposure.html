@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shagor Surreal Double Exposure Studio v2</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #08090c;
+            color: #f3f4f6;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 95%;
+            max-width: 550px;
+            padding: 24px;
+            background: #11131c;
+            border-radius: 28px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.8);
+            border: 1px solid #222637;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 24px;
+            font-weight: 800;
+            background: linear-gradient(45deg, #a5b4fc, #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .canvas-container {
+            width: 100%;
+            margin-bottom: 22px;
+            background: #181a26;
+            border-radius: 20px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 320px;
+            border: 1px dashed #31374d;
+        }
+
+        canvas {
+            max-width: 100%;
+            max-height: 42vh;
+            display: block;
+            border-radius: 14px;
+            box-shadow: 0 15px 45px rgba(0,0,0,0.65);
+        }
+
+        /* 🔘 আপলোড সেকশন ও প্রি-মেড থাম্বনেইল গ্রিড */
+        .upload-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .upload-btn {
+            padding: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 14px;
+            cursor: pointer;
+            border: 1px dashed #3a4263;
+            background: #171a26;
+            color: #cbd5e1;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .upload-btn.loaded {
+            border-style: solid;
+            border-color: #a5b4fc;
+            background: #1e2338;
+            color: #a5b4fc;
+        }
+
+        /* 🌲 প্রি-মেড নেচার প্যানেল */
+        .preset-panel {
+            background: #171a26;
+            padding: 12px;
+            border-radius: 16px;
+            border: 1px solid #252a3d;
+            margin-bottom: 16px;
+        }
+
+        .preset-title {
+            font-size: 11px;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 0;
+            margin-bottom: 8px;
+            text-align: left;
+            font-weight: 700;
+        }
+
+        .preset-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .preset-thumb {
+            padding: 8px;
+            background: #1f2437;
+            border: 1px solid #2e3656;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #94a3b8;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .preset-thumb:hover {
+            color: #fff;
+            border-color: #4f46e5;
+        }
+
+        .preset-thumb.active {
+            background: #a5b4fc;
+            color: #08090c;
+            border-color: #a5b4fc;
+        }
+
+        /* 🗂️ কন্ট্রোল প্যানেল স্লাইডারস */
+        .control-panel {
+            background: #171a26;
+            padding: 18px;
+            border-radius: 20px;
+            border: 1px solid #252a3d;
+            margin-bottom: 22px;
+            text-align: left;
+        }
+
+        .slider-group {
+            margin-bottom: 16px;
+        }
+
+        .slider-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: #94a3b8;
+            margin-bottom: 6px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .slider-label span {
+            color: #a5b4fc;
+            background: #24293e;
+            padding: 2px 8px;
+            border-radius: 6px;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 5px;
+            background: #2c324b;
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #a5b4fc;
+            cursor: pointer;
+            box-shadow: 0 0 12px rgba(165,180,252,0.5);
+        }
+
+        .save-btn {
+            width: 100%;
+            padding: 15px 24px;
+            font-size: 16px;
+            font-weight: 700;
+            border-radius: 35px;
+            cursor: pointer;
+            border: none;
+            background: #a5b4fc;
+            color: #08090c;
+            box-shadow: 0 4px 25px rgba(165, 180, 252, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .save-btn:disabled {
+            background: #1f2334 !important;
+            color: #4b526d !important;
+            box-shadow: none !important;
+            cursor: not-allowed;
+        }
+
+        .loader {
+            visibility: hidden;
+            color: #94a3b8;
+            font-size: 13px;
+            margin-top: 8px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Surreal Double Exposure</h2>
+    
+    <div class="canvas-container">
+        <canvas id="artCanvas"></canvas>
+    </div>
+
+    <div class="upload-grid">
+        <label class="upload-btn" id="lblPortrait">
+            <input type="file" id="portraitLoader" accept="image/*"/>
+            1. Upload Portrait
+        </label>
+        <label class="upload-btn" id="lblNature">
+            <input type="file" id="natureLoader" accept="image/*"/>
+            2. Custom Nature
+        </label>
+    </div>
+
+    <!-- 🌲 প্রি-মেড ব্যাকগ্রাউন্ড সিলেকশন প্যানেল -->
+    <div class="preset-panel">
+        <div class="preset-title">Or Choose Premade Nature Preset:</div>
+        <div class="preset-grid">
+            <div class="preset-thumb" id="p1" onclick="loadPremadeNature('https://images.unsplash.com/photo-1432406186174-2b24f48603e3?auto=format&fit=crop&w=700&q=80', 'p1')">🌊 Waterfall</div>
+            <div class="preset-thumb" id="p2" onclick="loadPremadeNature('https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=700&q=80', 'p2')">🌲 Misty Pines</div>
+            <div class="preset-thumb" id="p3" onclick="loadPremadeNature('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=700&q=80', 'p3')">🏔️ Mountain Peak</div>
+        </div>
+    </div>
+
+    <div class="control-panel">
+        <div class="slider-group">
+            <div class="slider-label">
+                <label for="blendSlider">Nature Exposure Level</label>
+                <span id="blendVal">60</span>
+            </div>
+            <input type="range" id="blendSlider" min="10" max="100" value="60" oninput="onModifierChange()" disabled>
+        </div>
+
+        <div class="slider-group">
+            <div class="slider-label">
+                <label for="contrastSlider">Portrait Contrast</label>
+                <span id="contrastVal">30</span>
+            </div>
+            <input type="range" id="contrastSlider" min="0" max="80" value="30" oninput="onModifierChange()" disabled>
+        </div>
+
+        <div class="slider-group">
+            <div class="slider-label">
+                <label for="surrealSlider">Surreal Bird Dissolve</label>
+                <span id="surrealVal">45</span>
+            </div>
+            <input type="range" id="surrealSlider" min="10" max="90" value="45" oninput="onModifierChange()" disabled>
+        </div>
+    </div>
+
+    <button id="generateBtn" class="save-btn" onclick="downloadSurrealArt()" disabled>Export Surreal Portrait</button>
+    <div id="loadingText" class="loader">Blending canvases & painting splatters...</div>
+</div>
+
+<script>
+    const canvas = document.getElementById('artCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    let imgPortrait = new Image();
+    let imgNature = new Image();
+    let renderTimeout = null;
+
+    // কাস্টম ইমেজ আপলোড হ্যান্ডলার
+    document.getElementById('portraitLoader').addEventListener('change', (e) => handleFile(e, imgPortrait, 'lblPortrait', false));
+    document.getElementById('natureLoader').addEventListener('change', (e) => handleFile(e, imgNature, 'lblNature', true));
+
+    function handleFile(e, imgObj, labelId, isNature) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            if(isNature) {
+                // কাস্টম নেচার ইমেজ আপলোড করলে প্রি-মেড সিলেকশন রিমুভ হবে
+                document.querySelectorAll('.preset-thumb').forEach(el => el.classList.remove('active'));
+            }
+            imgObj.onload = function() {
+                document.getElementById(labelId).classList.add('loaded');
+                document.getElementById(labelId).innerText = isNature ? '✓ Custom Nature Ready' : '✓ Portrait Ready';
+                
+                triggerPipelineExecution();
+            }
+            imgObj.src = event.target.result;
+        }
+        if(e.target.files[0]) reader.readAsDataURL(e.target.files[0]);
+    }
+
+    // 🌲 প্রি-মেড ইমেজ লোডার ইঞ্জিন (CORS Secure)
+    function loadPremadeNature(url, elementId) {
+        document.querySelectorAll('.preset-thumb').forEach(el => el.classList.remove('active'));
+        document.getElementById(elementId).classList.add('active');
+
+        document.getElementById('loadingText').style.visibility = 'visible';
+
+        imgNature = new Image();
+        imgNature.crossOrigin = "anonymous"; // অ্যান্ড্রয়েড গ্যালারি এক্সপোর্টের সিকিউরিটি ফিক্স
+        imgNature.onload = function() {
+            document.getElementById('lblNature').classList.add('loaded');
+            document.getElementById('lblNature').innerText = '✓ Preset Active';
+            triggerPipelineExecution();
+        }
+        imgNature.src = url;
+    }
+
+    function triggerPipelineExecution() {
+        if (imgPortrait.src && imgNature.src) {
+            setupCanvasDimensions();
+            enableControls();
+            renderSurrealExposure();
+        }
+    }
+
+    function setupCanvasDimensions() {
+        let w = imgPortrait.width;
+        let h = imgPortrait.height;
+        const maxDimension = 750;
+
+        if (w > maxDimension || h > maxDimension) {
+            if (w > h) { h = Math.round((h * maxDimension) / w); w = maxDimension; }
+            else { w = Math.round((w * maxDimension) / h); h = maxDimension; }
+        }
+        canvas.width = w;
+        canvas.height = h;
+    }
+
+    function enableControls() {
+        document.getElementById('blendSlider').disabled = false;
+        document.getElementById('contrastSlider').disabled = false;
+        document.getElementById('surrealSlider').disabled = false;
+        document.getElementById('generateBtn').disabled = false;
+    }
+
+    function onModifierChange() {
+        document.getElementById('blendVal').innerText = document.getElementById('blendSlider').value;
+        document.getElementById('contrastVal').innerText = document.getElementById('contrastSlider').value;
+        document.getElementById('surrealVal').innerText = document.getElementById('surrealSlider').value;
+
+        if (!imgPortrait.src || !imgNature.src) return;
+        document.getElementById('loadingText').style.visibility = 'visible';
+
+        clearTimeout(renderTimeout);
+        renderTimeout = setTimeout(() => {
+            renderSurrealExposure();
+        }, 60);
+    }
+
+    // 🌪️ ডাবল এক্সপোজার রেন্ডারিং কোর পাইপলাইন
+    function renderSurrealExposure() {
+        const w = canvas.width;
+        const h = canvas.height;
+
+        const blendAmt = parseInt(document.getElementById('blendSlider').value) / 100;
+        const contrastAmt = parseInt(document.getElementById('contrastSlider').value);
+        const surrealDensity = parseInt(document.getElementById('surrealSlider').value);
+
+        // ১. ব্যাকগ্রাউন্ড আর্ট পেপার বেস
+        ctx.fillStyle = '#eae7e2';
+        ctx.fillRect(0, 0, w, h);
+
+        // ২. বাফারে পোর্ট্রেট প্রসেসিং (Contrast & Monochrome Blend)
+        const pCanvas = document.createElement('canvas');
+        pCanvas.width = w; pCanvas.height = h;
+        const pCtx = pCanvas.getContext('2d');
+        pCtx.drawImage(imgPortrait, 0, 0, w, h);
+        
+        let pData = pCtx.getImageData(0, 0, w, h);
+        let pd = pData.data;
+        let factor = (255 + contrastAmt) / (255 - contrastAmt);
+
+        for (let i = 0; i < pd.length; i += 4) {
+            let gray = 0.299 * pd[i] + 0.587 * pd[i+1] + 0.114 * pd[i+2];
+            pd[i]   = Math.min(255, Math.max(0, factor * (gray - 128) + 128));
+            pd[i+1] = Math.min(255, Math.max(0, factor * (gray - 128) + 128));
+            pd[i+2] = Math.min(255, Math.max(0, factor * (gray - 128) + 128));
+        }
+        pCtx.putImageData(pData, 0, 0);
+
+        // ৩. নেচার ইমেজ কাটিং ও বাফারিং (Aspect Ratio Aspect Cover Fit)
+        const nCanvas = document.createElement('canvas');
+        nCanvas.width = w; nCanvas.height = h;
+        const nCtx = nCanvas.getContext('2d');
+        
+        let scale = Math.max(w / imgNature.width, h / imgNature.height);
+        let nw = imgNature.width * scale;
+        let nh = imgNature.height * scale;
+        let nx = (w - nw) / 2;
+        let ny = (h - nh) / 2;
+        nCtx.drawImage(imgNature, nx, ny, nw, nh);
+
+        // ৪. লুমিনেন্স বা ডার্কনেস মাস্কিং মিক্সার
+        const finalCanvas = document.createElement('canvas');
+        finalCanvas.width = w; finalCanvas.height = h;
+        const fCtx = finalCanvas.getContext('2d');
+        
+        fCtx.drawImage(pCanvas, 0, 0);
+        let baseData = fCtx.getImageData(0, 0, w, h);
+        let natData = nCtx.getImageData(0, 0, w, h);
+        
+        let bd = baseData.data;
+        let nd = natData.data;
+
+        for (let i = 0; i < bd.length; i += 4) {
+            let pBright = (bd[i] + bd[i+1] + bd[i+2]) / 3;
+            let maskStrength = (1.0 - (pBright / 255)) * blendAmt;
+            
+            bd[i]     = bd[i]     * (1 - maskStrength) + nd[i]     * maskStrength;
+            bd[i + 1] = bd[i + 1] * (1 - maskStrength) + nd[i + 1] * maskStrength;
+            bd[i + 2] = bd[i + 2] * (1 - maskStrength) + nd[i + 2] * maskStrength;
+        }
+        fCtx.putImageData(baseData, 0, 0);
+
+        // ৫. ওয়াটার কালার ক্লিপিং এজ মাস্কিং
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(w / 2, h / 2, Math.min(w, h) * 0.48, 0, Math.PI * 2);
+        ctx.clip();
+        ctx.drawImage(finalCanvas, 0, 0);
+        ctx.restore();
+
+        // ৬. প্রোসিডুরাল ওয়াটার কালার স্প্ল্যাটার ব্রাশ
+        ctx.fillStyle = "rgba(234, 231, 226, 1)"; 
+        for (let angle = 0; angle < Math.PI * 2; angle += 0.05) {
+            let radius = Math.min(w, h) * 0.44 + (Math.sin(angle * 12) * 15) + (Math.random() * 25);
+            let sx = w / 2 + Math.cos(angle) * radius;
+            let sy = h / 2 + Math.sin(angle) * radius;
+            
+            ctx.beginPath();
+            ctx.arc(sx, sy, 10 + Math.random() * 20, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // ৭. সুরিয়ালিস্টিক ডিসইন্টিগ্রেশন: পাখির ঝাঁক সিমুলেশন
+        ctx.fillStyle = "#1e2230"; 
+        let totalBirds = surrealDensity * 0.8;
+        
+        for (let i = 0; i < totalBirds; i++) {
+            let bx = (w * 0.15) + (Math.random() * (w * 0.45));
+            let by = (h * 0.15) + (Math.random() * (h * 0.6));
+            let bSize = 4 + (Math.random() * 10);
+            
+            if (Math.random() > 0.3) {
+                drawVectorBird(ctx, bx - (i * 2), by - (i * 1.5), bSize);
+            }
+        }
+
+        // ৮. ফাইনাল ফাইন টেক্সচার ওভারলে (গ্রিড ফাইবার)
+        ctx.globalCompositeOperation = 'multiply';
+        ctx.fillStyle = "rgba(0, 0, 0, 0.03)";
+        for(let g = 0; g < h; g += 3) ctx.fillRect(0, g, w, 1);
+        ctx.globalCompositeOperation = 'source-over';
+
+        document.getElementById('loadingText').style.visibility = 'hidden';
+    }
+
+    function drawVectorBird(context, x, y, size) {
+        context.save();
+        context.translate(x, y);
+        context.rotate(-0.2 - Math.random() * 0.4); 
+        context.beginPath();
+        context.moveTo(0, 0);
+        context.quadraticCurveTo(-size * 0.5, -size * 0.8, -size, -size * 0.2);
+        context.quadraticCurveTo(-size * 0.4, -size * 0.1, 0, 0);
+        context.moveTo(0, 0);
+        context.quadraticCurveTo(size * 0.5, -size * 0.9, size, -size * 0.4);
+        context.quadraticCurveTo(size * 0.3, 0, 0, 0);
+        context.fill();
+        context.restore();
+    }
+
+    function downloadSurrealArt() {
+        if (!imgPortrait.src || !imgNature.src) return;
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.96);
+
+        const downloadLink = document.createElement('a');
+        downloadLink.download = 'shagor_surreal_preset_exposure_' + Date.now() + '.jpg';
+        downloadLink.href = dataUrl;
+        downloadLink.click();
+
+        if (window.AndroidInterface && window.AndroidInterface.saveToGallery) {
+            window.AndroidInterface.saveToGallery(dataUrl);
+        }
+    }
+</script>
+
+</body>
+</html>

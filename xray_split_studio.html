@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dual X-Ray Split Vision Studio</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        html, body {
+            min-height: 100%;
+            background: #07090e;
+            color: #e2e8f0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            overflow-y: auto;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            padding: 20px 16px;
+            text-align: center;
+            background: rgba(7, 9, 14, 0.9);
+            border-bottom: 1px solid rgba(0, 243, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        header h1 {
+            font-size: 1.1rem;
+            font-weight: 900;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #00f3ff;
+            text-shadow: 0 0 12px rgba(0, 243, 255, 0.3);
+        }
+
+        header span {
+            display: block;
+            font-size: 0.7rem;
+            color: #94a3b8;
+            letter-spacing: 1px;
+            margin-top: 4px;
+            text-transform: uppercase;
+        }
+
+        .workspace {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            min-height: 360px;
+        }
+
+        .canvas-container {
+            width: 100%;
+            max-width: 540px;
+            height: 420px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            border-radius: 20px;
+            overflow: hidden;
+            background: #020305;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            box-shadow: 0 30px 60px -15px rgba(0,0,0,0.8);
+        }
+
+        canvas {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            display: none;
+        }
+
+        .placeholder {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            padding: 30px;
+            text-align: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        .placeholder .icon-glow {
+            width: 72px;
+            height: 72px;
+            background: rgba(0, 243, 255, 0.03);
+            border: 1px solid rgba(0, 243, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.05);
+        }
+
+        .placeholder svg {
+            width: 32px;
+            height: 32px;
+            fill: #00f3ff;
+        }
+
+        .placeholder p {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #cbd5e1;
+            margin-bottom: 4px;
+        }
+
+        .placeholder span {
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+
+        .controls-panel {
+            background: #0d111a;
+            border-top: 1px solid rgba(0, 243, 255, 0.1);
+            padding: 24px;
+            border-radius: 28px 28px 0 0;
+            box-shadow: 0 -15px 35px rgba(0,0,0,0.5);
+            max-width: 600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .control-row {
+            margin-bottom: 18px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: #94a3b8;
+            margin-bottom: 8px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .control-header span.val {
+            background: rgba(0, 243, 255, 0.1);
+            color: #00f3ff;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-family: monospace;
+        }
+
+        .color-picker-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            background: rgba(255,255,255,0.01);
+            padding: 12px 16px;
+            border-radius: 14px;
+            border: 1px solid rgba(255,255,255,0.04);
+        }
+
+        .color-label {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        input[type="color"] {
+            -webkit-appearance: none;
+            border: none;
+            width: 50px;
+            height: 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            background: none;
+        }
+
+        input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+
+        input[type="color"]::-webkit-color-swatch {
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 8px;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: #1e293b;
+            border-radius: 2px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #00f3ff;
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
+            cursor: pointer;
+            border: 2px solid #ffffff;
+        }
+
+        .action-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 14px;
+            margin-top: 22px;
+        }
+
+        .btn {
+            font-family: inherit;
+            font-weight: 700;
+            font-size: 0.85rem;
+            height: 48px;
+            border: none;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-upload {
+            background: #1e293b;
+            color: #cbd5e1;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .btn-save {
+            background: #00f3ff;
+            color: #020305;
+            box-shadow: 0 4px 20px rgba(0, 243, 255, 0.25);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        #file-input {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>X-Ray Split Vision Studio</h1>
+        <span>Photographic Tone Inversion & Midtone Compositor</span>
+    </header>
+
+    <div class="workspace">
+        <div class="canvas-container" id="drop-zone">
+            <div class="placeholder" id="placeholder">
+                <div class="icon-glow">
+                    <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 16H6c-.55 0-1-.45-1-1V6c0-.55.45-1 1-1h12c.55 0 1 .45 1 1v12c0 .55-.45 1-1 1zm-4.5-9L11 14l-2-2-3 4h12z"/></svg>
+                </div>
+                <p>Select or Drop Source Image</p>
+                <span>Works best with high contrast portraiture</span>
+            </div>
+            <canvas id="xrayCanvas"></canvas>
+        </div>
+    </div>
+
+    <div class="controls-panel">
+        <div class="control-row">
+            <div class="control-header">
+                <span>Split Screen Boundary</span>
+                <span class="val" id="val-split">50%</span>
+            </div>
+            <input type="range" id="slider-split" min="0" max="100" value="50" step="1">
+        </div>
+
+        <div class="control-row">
+            <div class="control-header">
+                <span>X-Ray Exposure (Contrast Boost)</span>
+                <span class="val" id="val-contrast">1.4x</span>
+            </div>
+            <input type="range" id="slider-contrast" min="0.8" max="2.5" value="1.4" step="0.1">
+        </div>
+
+        <div class="control-row">
+            <div class="control-header">
+                <span>Glow Core (Brightness Shift)</span>
+                <span class="val" id="val-brightness">0</span>
+            </div>
+            <input type="range" id="slider-brightness" min="-50" max="50" value="0" step="2">
+        </div>
+
+        <div class="color-picker-card">
+            <span class="color-label">Radiation Radiation Glow Color</span>
+            <input type="color" id="color-xray" value="#00f3ff">
+        </div>
+
+        <div class="action-grid">
+            <button class="btn btn-upload" id="btn-upload">Load Photo</button>
+            <button class="btn btn-save" id="btn-save">Export Composite</button>
+        </div>
+    </div>
+
+    <input type="file" id="file-input" accept="image/*">
+
+    <script>
+        const canvas = document.getElementById('xrayCanvas');
+        const ctx = canvas.getContext('2d');
+        const fileInput = document.getElementById('file-input');
+        const placeholder = document.getElementById('placeholder');
+        const dropZone = document.getElementById('drop-zone');
+        const btnUpload = document.getElementById('btn-upload');
+        const btnSave = document.getElementById('btn-save');
+
+        const sliderSplit = document.getElementById('slider-split');
+        const sliderContrast = document.getElementById('slider-contrast');
+        const sliderBrightness = document.getElementById('slider-brightness');
+        const colorXray = document.getElementById('color-xray');
+
+        const valSplit = document.getElementById('val-split');
+        const valContrast = document.getElementById('val-contrast');
+        const valBrightness = document.getElementById('val-brightness');
+
+        let srcImage = null;
+
+        // Interactive control synchronization
+        sliderSplit.addEventListener('input', (e) => { valSplit.innerText = e.target.value + '%'; renderXrayPipeline(); });
+        sliderContrast.addEventListener('input', (e) => { valContrast.innerText = e.target.value + 'x'; renderXrayPipeline(); });
+        sliderBrightness.addEventListener('input', (e) => { valBrightness.innerText = e.target.value; renderXrayPipeline(); });
+        colorXray.addEventListener('input', () => { renderXrayPipeline(); });
+
+        btnUpload.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('click', () => { if(!srcImage) fileInput.click(); });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                srcImage = new Image();
+                srcImage.onload = () => {
+                    placeholder.style.display = 'none';
+                    canvas.style.display = 'block';
+                    normalizeCanvasSize();
+                    renderXrayPipeline();
+                };
+                srcImage.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        function normalizeCanvasSize() {
+            const boundary = 900;
+            let w = srcImage.width;
+            let h = srcImage.height;
+
+            if (w > h && w > boundary) {
+                h = Math.round((h * boundary) / w);
+                w = boundary;
+            } else if (h > boundary) {
+                w = Math.round((w * boundary) / h);
+                h = boundary;
+            }
+            canvas.width = w;
+            canvas.height = h;
+        }
+
+        // Hex parsing helper for processing dynamic color fills smoothly
+        function getRGBFromHex(hex) {
+            const r = parseInt(hex.slice(1, 3), 16) / 255;
+            const g = parseInt(hex.slice(3, 5), 16) / 255;
+            const b = parseInt(hex.slice(5, 7), 16) / 255;
+            return { r, g, b };
+        }
+
+        function renderXrayPipeline() {
+            if (!srcImage) return;
+
+            const splitPct = parseInt(sliderSplit.value) / 100;
+            const contrast = parseFloat(sliderContrast.value);
+            const brightness = parseInt(sliderBrightness.value);
+            const hexColor = colorXray.value;
+            const tint = getRGBFromHex(hexColor);
+
+            const splitWidth = Math.round(canvas.width * splitPct);
+
+            // Step 1: Render base pristine image layer across the full canvas
+            ctx.drawImage(srcImage, 0, 0, canvas.width, canvas.height);
+
+            if (splitPct < 1) {
+                // Step 2: Extract target right-hand processing block to calculate pixel states
+                const xrayWidth = canvas.width - splitWidth;
+                if (xrayWidth <= 0) return;
+
+                const imgData = ctx.getImageData(splitWidth, 0, xrayWidth, canvas.height);
+                const data = imgData.data;
+
+                // Step 3: Compute high-contrast mathematical photographic negative
+                for (let i = 0; i < data.length; i += 4) {
+                    const r = data[i];
+                    const g = data[i + 1];
+                    const b = data[i + 2];
+
+                    // Standard Rec. 709 high-precision luminance extraction
+                    let gray = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+
+                    // Execute inversion loop (converts shadows to brilliant emission highlights)
+                    let inverted = 255 - gray;
+
+                    // Inject brightness shift factor
+                    inverted += brightness;
+
+                    // Apply localized contrast magnification curving around systemic anchor
+                    inverted = ((inverted - 128) * contrast) + 128;
+
+                    // Hardware clamping array safe verification
+                    inverted = Math.max(0, Math.min(255, inverted));
+
+                    // Map monochrome matrix directly onto specialized tint spectrum vectors
+                    data[i] = Math.round(inverted * tint.r);
+                    data[i + 1] = Math.round(inverted * tint.g);
+                    data[i + 2] = Math.round(inverted * tint.b);
+                }
+
+                // Step 4: Write inverted data segment back to the right canvas block
+                ctx.putImageData(imgData, splitWidth, 0);
+
+                // Step 5: Draw sharp high-definition dividing alignment vector
+                if (splitWidth > 0 && splitWidth < canvas.width) {
+                    ctx.beginPath();
+                    ctx.moveTo(splitWidth, 0);
+                    ctx.lineTo(splitWidth, canvas.height);
+                    ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+                    ctx.lineWidth = 2;
+                    ctx.shadowColor = hexColor;
+                    ctx.shadowBlur = 8;
+                    ctx.stroke();
+                    ctx.shadowBlur = 0; // Reset canvas glow states safely
+                }
+            }
+        }
+
+        btnSave.addEventListener('click', () => {
+            if (!srcImage) return;
+            const link = document.createElement('a');
+            link.download = 'xray_split_vision.jpg';
+            link.href = canvas.toDataURL('image/jpeg', 0.95);
+            link.click();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fluid Mirror: Water Reflection Studio</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        html, body {
+            min-height: 100%;
+            background: #06090e;
+            color: #e2e8f0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            overflow-y: auto;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            padding: 20px 16px;
+            text-align: center;
+            background: rgba(6, 9, 14, 0.95);
+            border-bottom: 1px solid rgba(56, 189, 248, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        header h1 {
+            font-size: 1.1rem;
+            font-weight: 900;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #38bdf8;
+            text-shadow: 0 0 12px rgba(56, 189, 248, 0.3);
+        }
+
+        header span {
+            display: block;
+            font-size: 0.7rem;
+            color: #94a3b8;
+            letter-spacing: 1px;
+            margin-top: 4px;
+            text-transform: uppercase;
+        }
+
+        .workspace {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            min-height: 380px;
+        }
+
+        .canvas-container {
+            width: 100%;
+            max-width: 540px;
+            height: 440px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            border-radius: 20px;
+            overflow: hidden;
+            background: #020406;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            box-shadow: 0 30px 60px -15px rgba(0,0,0,0.8);
+        }
+
+        canvas {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            display: none;
+        }
+
+        .placeholder {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            padding: 30px;
+            text-align: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        .placeholder .icon-glow {
+            width: 72px;
+            height: 72px;
+            background: rgba(56, 189, 248, 0.03);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.05);
+        }
+
+        .placeholder svg {
+            width: 32px;
+            height: 32px;
+            fill: #38bdf8;
+        }
+
+        .placeholder p {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #cbd5e1;
+            margin-bottom: 4px;
+        }
+
+        .placeholder span {
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+
+        .controls-panel {
+            background: #0b0f17;
+            border-top: 1px solid rgba(56, 189, 248, 0.15);
+            padding: 24px;
+            border-radius: 28px 28px 0 0;
+            box-shadow: 0 -15px 35px rgba(0,0,0,0.6);
+            max-width: 600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .control-row {
+            margin-bottom: 18px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: #94a3b8;
+            margin-bottom: 8px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .control-header span.val {
+            background: rgba(56, 189, 248, 0.1);
+            color: #38bdf8;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-family: monospace;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: #1e293b;
+            border-radius: 2px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #38bdf8;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+            cursor: pointer;
+            border: 2px solid #ffffff;
+        }
+
+        .action-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 14px;
+            margin-top: 24px;
+        }
+
+        .btn {
+            font-family: inherit;
+            font-weight: 700;
+            font-size: 0.85rem;
+            height: 48px;
+            border: none;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-upload {
+            background: #1e293b;
+            color: #cbd5e1;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .btn-save {
+            background: #38bdf8;
+            color: #020406;
+            box-shadow: 0 4px 20px rgba(56, 189, 248, 0.25);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        #file-input {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Fluid Mirror Studio</h1>
+        <span>Displacement Mapping & Water Ripple Engine</span>
+    </header>
+
+    <div class="workspace">
+        <div class="canvas-container" id="drop-zone">
+            <div class="placeholder" id="placeholder">
+                <div class="icon-glow">
+                    <svg viewBox="0 0 24 24"><path d="M12 2c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L4.35 18c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0l1.9-1.9C9.22 18.67 10.57 19 12 19c4.97 0 9-4.03 9-9s-4.03-9-9-9zm0 15c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z"/></svg>
+                </div>
+                <p>Select or Drop Source Image</p>
+                <span>Works beautifully with landscape and portrait horizons</span>
+            </div>
+            <canvas id="waterCanvas"></canvas>
+        </div>
+    </div>
+
+    <div class="controls-panel">
+        <div class="control-row">
+            <div class="control-header">
+                <span>Water Line Position</span>
+                <span class="val" id="val-waterline">55%</span>
+            </div>
+            <input type="range" id="slider-waterline" min="20" max="80" value="55" step="1">
+        </div>
+
+        <div class="control-row">
+            <div class="control-header">
+                <span>Ripple Wave Depth (Amplitude)</span>
+                <span class="val" id="val-amplitude">12px</span>
+            </div>
+            <input type="range" id="slider-amplitude" min="0" max="30" value="12" step="1">
+        </div>
+
+        <div class="control-row">
+            <div class="control-header">
+                <span>Ripple Frequency</span>
+                <span class="val" id="val-frequency">25</span>
+            </div>
+            <input type="range" id="slider-frequency" min="10" max="60" value="25" step="1">
+        </div>
+
+        <div class="control-row">
+            <div class="control-header">
+                <span>Water Clarity (Depth Fade)</span>
+                <span class="val" id="val-depth">15%</span>
+            </div>
+            <input type="range" id="slider-depth" min="0" max="50" value="15" step="5">
+        </div>
+
+        <div class="action-grid">
+            <button class="btn btn-upload" id="btn-upload">Load Photo</button>
+            <button class="btn btn-save" id="btn-save">Export Image</button>
+        </div>
+    </div>
+
+    <input type="file" id="file-input" accept="image/*">
+
+    <script>
+        const canvas = document.getElementById('waterCanvas');
+        const ctx = canvas.getContext('2d');
+        const fileInput = document.getElementById('file-input');
+        const placeholder = document.getElementById('placeholder');
+        const dropZone = document.getElementById('drop-zone');
+        const btnUpload = document.getElementById('btn-upload');
+        const btnSave = document.getElementById('btn-save');
+
+        const sliderWaterline = document.getElementById('slider-waterline');
+        const sliderAmplitude = document.getElementById('slider-amplitude');
+        const sliderFrequency = document.getElementById('slider-frequency');
+        const sliderDepth = document.getElementById('slider-depth');
+
+        const valWaterline = document.getElementById('val-waterline');
+        const valAmplitude = document.getElementById('val-amplitude');
+        const valFrequency = document.getElementById('val-frequency');
+        const valDepth = document.getElementById('val-depth');
+
+        let srcImage = null;
+
+        // Interactive UI Updates
+        sliderWaterline.addEventListener('input', (e) => { valWaterline.innerText = e.target.value + '%'; renderWaterPipeline(); });
+        sliderAmplitude.addEventListener('input', (e) => { valAmplitude.innerText = e.target.value + 'px'; renderWaterPipeline(); });
+        sliderFrequency.addEventListener('input', (e) => { valFrequency.innerText = e.target.value; renderWaterPipeline(); });
+        sliderDepth.addEventListener('input', (e) => { valDepth.innerText = e.target.value + '%'; renderWaterPipeline(); });
+
+        btnUpload.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('click', () => { if(!srcImage) fileInput.click(); });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                srcImage = new Image();
+                srcImage.onload = () => {
+                    placeholder.style.display = 'none';
+                    canvas.style.display = 'block';
+                    normalizeCanvasDimensions();
+                    renderWaterPipeline();
+                };
+                srcImage.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        function normalizeCanvasDimensions() {
+            const maxDimension = 900;
+            let w = srcImage.width;
+            let h = srcImage.height;
+
+            if (w > h && w > maxDimension) {
+                h = Math.round((h * maxDimension) / w);
+                w = maxDimension;
+            } else if (h > maxDimension) {
+                w = Math.round((w * maxDimension) / h);
+                h = maxDimension;
+            }
+            canvas.width = w;
+            canvas.height = h;
+        }
+
+        function renderWaterPipeline() {
+            if (!srcImage) return;
+
+            const w = canvas.width;
+            const h = canvas.height;
+
+            const waterlinePct = parseInt(sliderWaterline.value) / 100;
+            const amplitude = parseInt(sliderAmplitude.value);
+            const frequency = parseInt(sliderFrequency.value) / 1000;
+            const depthFade = parseInt(sliderDepth.value) / 100;
+
+            const waterLineY = Math.round(h * waterlinePct);
+
+            // Step 1: Draw the upright scenery onto the top portion
+            ctx.drawImage(srcImage, 0, 0, w, waterLineY, 0, 0, w, waterLineY);
+
+            // Step 2: Render a clean mathematical reflection baseline to pull pixel data from
+            // We temporarily map the mirrored background onto the bottom workspace
+            ctx.save();
+            ctx.translate(0, waterLineY * 2);
+            ctx.scale(1, -1);
+            ctx.drawImage(srcImage, 0, 0, w, waterLineY, 0, 0, w, waterLineY);
+            ctx.restore();
+
+            // Step 3: Run the digital liquid displacement engine over the mirrored boundary
+            if (waterLineY < h && amplitude > 0) {
+                const reflectionHeight = h - waterLineY;
+                const imgData = ctx.getImageData(0, waterLineY, w, reflectionHeight);
+                const data = imgData.data;
+                
+                // Create a temporary buffer copy to read unmodified pixel coordinates safely
+                const buffer = new Uint8ClampedArray(data);
+
+                for (let y = 0; y < reflectionHeight; y++) {
+                    const globalY = waterLineY + y;
+
+                    // Advanced multi-frequency composite sine waves for dynamic, realistic fluid ripples
+                    // Perspective scaling: ripples naturally compress tighter near the horizon line
+                    const perspectiveScale = (y / reflectionHeight); 
+                    const wave1 = Math.sin((globalY * frequency * 2) + (perspectiveScale * 5));
+                    const wave2 = Math.cos(globalY * (frequency * 3.7));
+                    
+                    const totalDisplacementX = Math.round((wave1 * 0.7 + wave2 * 0.3) * amplitude);
+
+                    // Depth calculation for color shifts
+                    const fadeFactor = 1 - (perspectiveScale * depthFade);
+
+                    for (let x = 0; x < w; x++) {
+                        // Compute and clamp displaced target coordinates safely within picture bounds
+                        let targetX = x + totalDisplacementX;
+                        if (targetX < 0) targetX = 0;
+                        if (targetX >= w) targetX = w - 1;
+
+                        const sourceIdx = (y * w + targetX) * 4;
+                        const destIdx = (y * w + x) * 4;
+
+                        // Apply organic fluid color attenuation (slight shadow dampening down-stream)
+                        data[destIdx]     = Math.round(buffer[sourceIdx] * fadeFactor);     // R
+                        data[destIdx + 1] = Math.round(buffer[sourceIdx + 1] * fadeFactor); // G
+                        data[destIdx + 2] = Math.round(buffer[sourceIdx + 2] * fadeFactor); // B
+                        data[destIdx + 3] = buffer[sourceIdx + 3];                          // A
+                    }
+                }
+                
+                // Write the completed complex fluid simulation map back to the canvas context
+                ctx.putImageData(imgData, 0, waterLineY);
+            }
+        }
+
+        btnSave.addEventListener('click', () => {
+            if (!srcImage) return;
+            const link = document.createElement('a');
+            link.download = 'fluid_mirror_reflection.jpg';
+            link.href = canvas.toDataURL('image/jpeg', 0.95);
+            link.click();
+        });
+    </script>
+</body>
+</html>

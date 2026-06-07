@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bright Smudged Effect</title>
+    <style>
+        :root {
+            --primary: #b500ff;
+            --secondary: #ff0055;
+            --bg-top: #1a1a2e;
+            --bg-bottom: #0f0f1a;
+            --surface: rgba(255, 255, 255, 0.05);
+            --text: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--bg-top), var(--bg-bottom));
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            background: linear-gradient(90deg, var(--secondary), var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .canvas-container {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            background: var(--surface);
+            border-radius: 16px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        canvas {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .controls {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-group label {
+            font-size: 0.9rem;
+            color: #ccc;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* Modern Mobile Sliders */
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: var(--surface);
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--primary);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: auto;
+            padding-top: 20px;
+        }
+
+        button, .file-upload-label {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            transition: opacity 0.2s;
+        }
+
+        button:active, .file-upload-label:active {
+            opacity: 0.8;
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            color: white;
+            box-shadow: 0 4px 15px rgba(181, 0, 255, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--surface);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        #placeholder-text {
+            position: absolute;
+            color: #888;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Bright Smudge FX</h1>
+    </div>
+
+    <div class="canvas-container" id="canvasContainer">
+        <span id="placeholder-text">Upload an image</span>
+        <canvas id="photoCanvas"></canvas>
+    </div>
+
+    <div class="controls">
+        <div class="control-group">
+            <label>Smudge Distance <span id="smudgeVal">50%</span></label>
+            <input type="range" id="smudge" min="0" max="100" value="50">
+        </div>
+        <div class="control-group">
+            <label>Neon Intensity <span id="intensityVal">70%</span></label>
+            <input type="range" id="intensity" min="0" max="100" value="70">
+        </div>
+        <div class="control-group">
+            <label>Glow / Bloom <span id="glowVal">60%</span></label>
+            <input type="range" id="glow" min="0" max="100" value="60">
+        </div>
+
+        <div class="button-group">
+            <label class="file-upload-label btn-secondary">
+                Load Image
+                <input type="file" id="imageUpload" accept="image/*">
+            </label>
+            <button id="saveBtn" class="btn-primary">Save Image</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('photoCanvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        const imageUpload = document.getElementById('imageUpload');
+        const saveBtn = document.getElementById('saveBtn');
+        const placeholderText = document.getElementById('placeholder-text');
+
+        // Controls
+        const smudgeCtrl = document.getElementById('smudge');
+        const intensityCtrl = document.getElementById('intensity');
+        const glowCtrl = document.getElementById('glow');
+
+        // Value Labels
+        const smudgeVal = document.getElementById('smudgeVal');
+        const intensityVal = document.getElementById('intensityVal');
+        const glowVal = document.getElementById('glowVal');
+
+        let imgObj = null;
+        let maxCanvasSize = 1200; // Optimal max resolution for mobile performance
+
+        imageUpload.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    imgObj = img;
+                    placeholderText.style.display = 'none';
+                    
+                    // Scale down massively large images to prevent webview crashes
+                    let width = img.width;
+                    let height = img.height;
+                    if (width > maxCanvasSize || height > maxCanvasSize) {
+                        const ratio = Math.min(maxCanvasSize / width, maxCanvasSize / height);
+                        width = width * ratio;
+                        height = height * ratio;
+                    }
+                    
+                    canvas.width = width;
+                    canvas.height = height;
+                    applyEffect();
+                }
+                img.src = event.target.result;
+            }
+            reader.readAsDataURL(file);
+        });
+
+        function applyEffect() {
+            if (!imgObj) return;
+
+            const smudge = smudgeCtrl.value / 100;
+            const intensity = intensityCtrl.value / 100;
+            const glow = glowCtrl.value / 100;
+
+            const w = canvas.width;
+            const h = canvas.height;
+
+            // Clear previous render
+            ctx.clearRect(0, 0, w, h);
+
+            // Step 1: Base Image with Cyberpunk Color Grading
+            // Sepia + Hue-rotate is a great trick to force a specific color map in canvas
+            const baseContrast = 100 + (intensity * 100);
+            const baseSaturate = 100 + (intensity * 150);
+            const baseBrightness = 80 + (glow * 40);
+            
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.globalAlpha = 1.0;
+            // Targetting the purple/magenta hue (~270deg from sepia)
+            ctx.filter = `contrast(${baseContrast}%) saturate(${baseSaturate}%) sepia(80%) hue-rotate(270deg) brightness(${baseBrightness}%)`;
+            ctx.drawImage(imgObj, 0, 0, w, h);
+
+            // Step 2: The "Smudge" / Horizontal Motion Blur Effect
+            // We achieve this by drawing the image multiple times with horizontal offsets and lower opacity
+            const smudgePasses = Math.max(1, Math.floor(smudge * 40)); 
+            const maxSpread = w * 0.15 * smudge; // Max horizontal stretch based on image width
+            
+            ctx.globalCompositeOperation = 'screen'; // Creates the bright overlapping neon look
+            ctx.filter = `contrast(${baseContrast + 50}%) saturate(200%) sepia(100%) hue-rotate(280deg) brightness(${100 + glow * 50}%) blur(2px)`;
+            
+            // Distribute opacity based on the number of passes to prevent blowing out to pure white
+            ctx.globalAlpha = (0.3 * intensity) / (smudgePasses * 0.5 + 1);
+
+            for (let i = 1; i <= smudgePasses; i++) {
+                const offset = (i / smudgePasses) * maxSpread;
+                // Smudge Right
+                ctx.drawImage(imgObj, offset, 0, w, h);
+                // Smudge Left
+                ctx.drawImage(imgObj, -offset, 0, w, h);
+            }
+
+            // Step 3: Add core highlights back to ensure the center isn't completely washed out
+            ctx.globalCompositeOperation = 'overlay';
+            ctx.globalAlpha = 0.5 * intensity;
+            ctx.filter = `contrast(120%) saturate(120%) brightness(110%)`;
+            ctx.drawImage(imgObj, 0, 0, w, h);
+
+            // Reset context
+            ctx.filter = 'none';
+            ctx.globalAlpha = 1.0;
+            ctx.globalCompositeOperation = 'source-over';
+        }
+
+        // Event Listeners for Sliders
+        const updateEffect = () => {
+            smudgeVal.innerText = smudgeCtrl.value + '%';
+            intensityVal.innerText = intensityCtrl.value + '%';
+            glowVal.innerText = glowCtrl.value + '%';
+            // Debounce slightly if performance on low-end devices is an issue
+            requestAnimationFrame(applyEffect); 
+        };
+
+        smudgeCtrl.addEventListener('input', updateEffect);
+        intensityCtrl.addEventListener('input', updateEffect);
+        glowCtrl.addEventListener('input', updateEffect);
+
+        // Save Functionality
+        saveBtn.addEventListener('click', () => {
+            if (!imgObj) {
+                alert("Please load an image first.");
+                return;
+            }
+            
+            // Standard web save method. 
+            // Note: In an Android Webview, you might want to pass this base64 string to a Kotlin/Java interface instead.
+            const dataURL = canvas.toDataURL('image/jpeg', 0.95);
+            const link = document.createElement('a');
+            link.download = 'smudged_effect_output.jpg';
+            link.href = dataURL;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+    </script>
+</body>
+</html>
