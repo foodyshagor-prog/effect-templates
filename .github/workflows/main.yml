@@ -3,6 +3,7 @@ on:
   push:
     paths:
       - '**.html'
+  workflow_dispatch:  # <--- এই লাইনটি যোগ করলেই বাটনটি আসবে!
 
 jobs:
   generate:
